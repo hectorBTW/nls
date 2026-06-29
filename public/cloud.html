@@ -240,11 +240,26 @@ checkUser();
 async function buy(plan) {
   const os = document.getElementById("os-" + plan).value;
 
+  // 1. Comprobar sesión (IMPORTANTE)
+  const sessionRes = await fetch("/api/session", {
+    credentials: "include"
+  });
+
+  const session = await sessionRes.json();
+
+  if (!session?.user) {
+    alert("Debes iniciar sesión para contratar un plan");
+    window.location.href = "/login.html";
+    return;
+  }
+
+  // 2. Crear checkout SOLO si está logueado
   const res = await fetch("/api/create-checkout", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
+    credentials: "include",
     body: JSON.stringify({ plan, os })
   });
 
