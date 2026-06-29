@@ -13,33 +13,23 @@
   <div class="container nav">
 
     <div class="logo">
-  <img src="logo.png" alt="NLS" class="logo-img">
-  <span class="divider">|</span>
-  <span class="product">Private Cloud</span>
-</div>
+      <img src="logo.png" alt="NLS" style="height:28px; vertical-align:middle;">
+      <span style="margin-left:10px; font-weight:300; color:#888;">Private Cloud</span>
+    </div>
 
     <nav>
-      <a href="#features">Características</a>
-      <a href="#os">Sistemas</a>
-      <a href="#pricing">Planes</a>
-      <a href="#faq">FAQ</a>
+      <a href="#features">Features</a>
+      <a href="#os">OS</a>
+      <a href="#pricing">Plans</a>
     </nav>
-
-    <a class="btn small" href="#pricing">Contratar</a>
 
   </div>
 </header>
 
-<!-- HERO -->
 <section class="hero">
   <div class="container">
-    <h1>Infraestructura privada en la nube</h1>
-    <p>
-      Entornos de cómputo aislados con acceso seguro mediante red privada WireGuard.
-      Diseñado para desarrollo, automatización y sistemas backend.
-    </p>
-
-    <a class="btn" href="#pricing">Ver planes</a>
+    <h1>NLS Private Cloud</h1>
+    <p>Infraestructura aislada con redes privadas, VPS dedicados y backups automáticos.</p>
   </div>
 </section>
 
@@ -48,30 +38,30 @@
   <div class="container grid">
 
     <div class="card">
-      <h3>Entorno aislado</h3>
-      <p>Cada instancia ejecuta recursos completamente separados del resto de clientes.</p>
+      <h3>Aislamiento total</h3>
+      <p>Cada VPS está completamente separado del resto de clientes.</p>
     </div>
 
     <div class="card">
       <h3>Red privada</h3>
-      <p>Acceso exclusivo mediante WireGuard sin exposición directa a Internet.</p>
+      <p>Acceso mediante VPN sin exposición directa a internet.</p>
     </div>
 
     <div class="card">
       <h3>Recursos dedicados</h3>
-      <p>CPU, RAM y almacenamiento asignados exclusivamente por instancia.</p>
+      <p>CPU, RAM y disco garantizados por instancia.</p>
     </div>
 
     <div class="card">
-      <h3>Backups automáticos</h3>
-      <p>Copia de seguridad diaria incluida en todos los planes.</p>
+      <h3>Backups diarios</h3>
+      <p>Copias automáticas incluidas en todos los planes.</p>
     </div>
 
   </div>
 </section>
 
 <!-- OS -->
-<section id="os" class="section alt">
+<section id="os" class="section dark">
   <div class="container">
 
     <h2>Sistemas operativos</h2>
@@ -80,26 +70,25 @@
 
       <div class="card">
         <h3>Ubuntu</h3>
-        <p>Ubuntu Server 22.04 / 24.04 LTS</p>
+        <p>24.04 / 22.04 LTS</p>
       </div>
 
       <div class="card">
         <h3>Debian</h3>
-        <p>Debian 12 estable</p>
+        <p>Estable y ligero</p>
       </div>
 
       <div class="card">
-        <h3>Linux Server</h3>
-        <p>Distribuciones optimizadas para servidor</p>
+        <h3>AlmaLinux</h3>
+        <p>Compatible RHEL</p>
       </div>
 
       <div class="card">
-        <h3>Windows Server</h3>
-        <p>Disponible con licencia adicional</p>
+        <h3>Rocky Linux</h3>
+        <p>Enterprise Linux estable</p>
       </div>
 
     </div>
-
   </div>
 </section>
 
@@ -111,6 +100,7 @@
 
     <div class="pricing">
 
+      <!-- BASIC -->
       <div class="price-card">
         <h3>Basic</h3>
         <p class="price">2,99€</p>
@@ -119,18 +109,20 @@
           <li>1 vCPU</li>
           <li>1 GB RAM</li>
           <li>20 GB SSD</li>
-          <li>Red privada</li>
         </ul>
 
-        <label>Sistema operativo</label>
+        <label>OS</label>
         <select id="os-basic">
           <option value="ubuntu">Ubuntu</option>
           <option value="debian">Debian</option>
+          <option value="almalinux">AlmaLinux</option>
+          <option value="rocky">Rocky Linux</option>
         </select>
 
         <button class="btn" onclick="buy('basic')">Contratar</button>
       </div>
 
+      <!-- STANDARD -->
       <div class="price-card highlight">
         <h3>Standard</h3>
         <p class="price">4,99€</p>
@@ -139,18 +131,20 @@
           <li>2 vCPU</li>
           <li>2 GB RAM</li>
           <li>40 GB SSD</li>
-          <li>Backups diarios</li>
         </ul>
 
-        <label>Sistema operativo</label>
+        <label>OS</label>
         <select id="os-standard">
           <option value="ubuntu">Ubuntu</option>
           <option value="debian">Debian</option>
+          <option value="almalinux">AlmaLinux</option>
+          <option value="rocky">Rocky Linux</option>
         </select>
 
         <button class="btn" onclick="buy('standard')">Contratar</button>
       </div>
 
+      <!-- PRO -->
       <div class="price-card">
         <h3>Pro</h3>
         <p class="price">8,99€</p>
@@ -159,56 +153,24 @@
           <li>4 vCPU</li>
           <li>8 GB RAM</li>
           <li>80 GB SSD</li>
-          <li>Alta prioridad</li>
         </ul>
 
-        <label>Sistema operativo</label>
+        <label>OS</label>
         <select id="os-pro">
           <option value="ubuntu">Ubuntu</option>
           <option value="debian">Debian</option>
+          <option value="almalinux">AlmaLinux</option>
+          <option value="rocky">Rocky Linux</option>
         </select>
 
         <button class="btn" onclick="buy('pro')">Contratar</button>
       </div>
 
     </div>
-
   </div>
 </section>
 
-<!-- FAQ -->
-<section id="faq" class="section alt">
-  <div class="container">
-
-    <h2>Preguntas frecuentes</h2>
-
-    <div class="faq">
-
-      <p><strong>¿Tiene IP pública?</strong><br>
-      No. El acceso es mediante red privada WireGuard.</p>
-
-      <p><strong>¿Qué sistemas operativos hay?</strong><br>
-      Ubuntu y Debian principalmente.</p>
-
-      <p><strong>¿Es seguro?</strong><br>
-      Cada instancia está completamente aislada.</p>
-
-      <p><strong>¿Puedo exponer servicios?</strong><br>
-      Sí, mediante NAT o túneles configurables.</p>
-
-    </div>
-
-  </div>
-</section>
-
-<!-- FOOTER -->
-<footer class="footer">
-  <div class="container">
-    <p>© 2026 NLS | Private Cloud Infrastructure</p>
-  </div>
-</footer>
-
-<!-- STRIPE -->
+<!-- JS STRIPE -->
 <script>
 async function buy(plan) {
 
@@ -219,14 +181,16 @@ async function buy(plan) {
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      plan: plan,
-      os: os
-    })
+    body: JSON.stringify({ plan, os })
   });
 
   const data = await res.json();
-  window.location.href = data.url;
+
+  if (data.url) {
+    window.location.href = data.url;
+  } else {
+    alert("Error creando checkout");
+  }
 }
 </script>
 
