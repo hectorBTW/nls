@@ -69,7 +69,7 @@ Email: ${session.customer_details?.email}
         },
         body: JSON.stringify({
           from: "NLS Cloud <noreply@tudominio.com>",
-          to: "TU_EMAIL_REAL@gmail.com",
+          to: "nolimitsystems41@gmail.com",
           subject: "Nuevo VPS comprado",
           text: message,
         }),
