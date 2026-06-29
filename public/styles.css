@@ -6,6 +6,9 @@
   --border: #9ca3af;
   --accent: #2563eb;
   --accent-hover: #1d4ed8;
+
+  /* IMPORTANTE: altura real del header */
+  --header-height: 72px;
 }
 
 * {
@@ -14,42 +17,48 @@
 
 body {
   margin: 0;
+  padding: 0;
   font-family: Inter, system-ui, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
 }
 
-/* CONTAINER */
+/* =========================
+   CONTAINER
+========================= */
 .container {
   width: 90%;
   max-width: 1100px;
   margin: auto;
 }
 
-.logo-img {
-  height: 28px;
-  width: auto;
-  display: block;
-}
-
-/* HEADER */
+/* =========================
+   HEADER GLOBAL
+========================= */
 .header {
-  background: white;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
+
   position: sticky;
   top: 0;
   z-index: 100;
+
+  height: var(--header-height);
 }
 
 .nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 0;
+  height: 100%;
+  padding: 0;
 }
 
-/* LOGO */
+/* =========================
+   LOGO
+========================= */
 .logo {
   display: flex;
   align-items: center;
@@ -57,31 +66,14 @@ body {
   font-weight: 600;
 }
 
-.nls {
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -1px;
-}
-
-.n, .l {
-  color: var(--text);
-}
-
-.s {
-  color: var(--accent);
-}
-
-.divider {
-  color: #9ca3af;
-  font-weight: 400;
-}
-
 .product {
   font-weight: 300;
   color: var(--muted);
 }
 
-/* NAV */
+/* =========================
+   NAV LINKS
+========================= */
 nav a {
   color: var(--muted);
   text-decoration: none;
@@ -93,10 +85,42 @@ nav a:hover {
   color: var(--text);
 }
 
-/* HERO */
+/* =========================
+   SUBNAV (CLOUD INTERNAL)
+========================= */
+.subnav {
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(8px);
+
+  border-bottom: 1px solid var(--border);
+
+  position: sticky;
+  top: var(--header-height);
+  z-index: 99;
+}
+
+.subnav .container {
+  display: flex;
+  gap: 18px;
+  padding: 12px 0;
+}
+
+.subnav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.subnav a:hover {
+  color: var(--text);
+}
+
+/* =========================
+   HERO
+========================= */
 .hero {
   padding: 110px 0;
-  text-align: left;
 }
 
 .hero h1 {
@@ -112,7 +136,9 @@ nav a:hover {
   max-width: 650px;
 }
 
-/* SECTIONS */
+/* =========================
+   SECTIONS
+========================= */
 .section {
   padding: 90px 0;
 }
@@ -121,14 +147,18 @@ nav a:hover {
   background: var(--surface);
 }
 
-/* GRID */
+/* =========================
+   GRID
+========================= */
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
 }
 
-/* CARDS */
+/* =========================
+   CARDS
+========================= */
 .card {
   background: white;
   border: 1px solid var(--border);
@@ -136,11 +166,9 @@ nav a:hover {
   padding: 28px;
 }
 
-.card h3 {
-  margin-top: 0;
-}
-
-/* PRICING */
+/* =========================
+   PRICING
+========================= */
 .pricing {
   display: flex;
   gap: 20px;
@@ -169,13 +197,17 @@ nav a:hover {
   font-weight: 700;
 }
 
-/* LIST */
+/* =========================
+   LIST
+========================= */
 ul {
   padding-left: 18px;
   color: var(--muted);
 }
 
-/* SELECT */
+/* =========================
+   SELECT
+========================= */
 select {
   width: 100%;
   padding: 10px;
@@ -186,7 +218,9 @@ select {
   color: var(--text);
 }
 
-/* BUTTON */
+/* =========================
+   BUTTON
+========================= */
 .btn {
   display: inline-block;
   margin-top: 14px;
@@ -198,36 +232,16 @@ select {
   cursor: pointer;
   font-weight: 600;
   text-decoration: none;
+  width: 100%;
 }
 
 .btn:hover {
   background: var(--accent-hover);
 }
 
-.btn.small {
-  padding: 8px 12px;
-  font-size: 14px;
-}
-
-/* FAQ */
-.faq p {
-  margin-bottom: 18px;
-  color: var(--muted);
-}
-
-.faq strong {
-  color: var(--text);
-}
-
-/* FOOTER */
-.footer {
-  border-top: 1px solid var(--border);
-  padding: 40px 0;
-  text-align: center;
-  color: var(--muted);
-}
-
-/* RESPONSIVE */
+/* =========================
+   RESPONSIVE
+========================= */
 @media (max-width: 900px) {
   .pricing {
     flex-direction: column;
@@ -245,38 +259,3 @@ select {
     display: none;
   }
 }
-
-h2 {
-  font-size: 32px;
-  margin-bottom: 15px;
-}
-
-.section.alt {
-  background: var(--surface);
-}
-
-.subnav {
-  background: white;
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 72px;
-  z-index: 99;
-}
-
-.subnav .container {
-  display: flex;
-  gap: 18px;
-  padding: 12px 0;
-}
-
-.subnav a {
-  color: var(--muted);
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 14px;
-}
-
-.subnav a:hover {
-  color: var(--text);
-}
-
