@@ -3,31 +3,47 @@ import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end();
 
-  const { plan, os } = req.body;
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-  const prices = {
-    basic: "price_BASIC_ID",
-    standard: "price_STANDARD_ID",
-    pro: "price_PRO_ID",
-  };
+  try {
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    line_items: [
-      {
-        price: prices[plan],
-        quantity: 1,
-      },
-    ],
-    metadata: {
-      plan,
-      os,
-    },
-    success_url: "https://tuweb.vercel.app/success",
-    cancel_url: "https://tuweb.vercel.app/cancel",
-  });
+    console.log("BODY:", req.body);
 
-  res.json({ url: session.url });
+    const { plan, os } = req.body;
+
+    const prices = {
+      basic: "price_BASIC_ID",
+      standard: "price_STANDARD_ID",
+      pro: "price_PRO_ID"
+    };
+
+    if (!prices[plan]) {
+      return res.status(400).json({ error: "Invalid plan: " + plan });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [
+        {
+          price: prices[plan],
+          quantity: 1
+        }
+      ],
+      metadata: { plan, os },
+      success_url: "https://nls-one.vercel.app/",
+      cancel_url: "https://nls-one.vercel.app/"
+    });
+
+    return res.status(200).json({ url: session.url });
+
+  } catch (err) {
+    console.error("STRIPE ERROR:", err);
+
+    return res.status(500).json({
+      error: err.message
+    });
+  }
 }
