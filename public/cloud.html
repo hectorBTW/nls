@@ -9,7 +9,7 @@
 
 <body>
 
-<!-- HEADER -->
+<!-- HEADER GLOBAL -->
 <header class="header">
   <div class="container nav">
 
@@ -18,14 +18,23 @@
       <span class="product">Private Cloud</span>
     </div>
 
- <nav>
-  <a href="/">NLS</a>
-  <a href="/cloud.html">Private Cloud</a>
-  <a href="/support.html">Soporte</a>
-</nav>
+    <nav>
+      <a href="/">NLS</a>
+      <a href="/cloud.html">Private Cloud</a>
+      <a href="/support.html">Soporte</a>
+    </nav>
 
   </div>
 </header>
+
+<!-- SUBNAV (CLOUD INTERNAL NAV) -->
+<div class="subnav">
+  <div class="container">
+    <a href="#features">Features</a>
+    <a href="#os">Sistemas Operativos</a>
+    <a href="#pricing">Planes</a>
+  </div>
+</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -173,7 +182,7 @@
   </div>
 </section>
 
-<!-- JS STRIPE -->
+<!-- STRIPE -->
 <script>
 async function buy(plan) {
   const os = document.getElementById("os-" + plan).value;
@@ -194,6 +203,7 @@ async function buy(plan) {
     alert("Error creando checkout");
   }
 }
+</script>
 
 </body>
 </html>
