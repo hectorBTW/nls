@@ -255,4 +255,28 @@ h2 {
   background: var(--surface);
 }
 
+.subnav {
+  background: white;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 72px;
+  z-index: 99;
+}
+
+.subnav .container {
+  display: flex;
+  gap: 18px;
+  padding: 12px 0;
+}
+
+.subnav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.subnav a:hover {
+  color: var(--text);
+}
 
