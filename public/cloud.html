@@ -7,78 +7,39 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 
-<!-- SUPABASE LOGIN (CORRECTO) -->
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-const supabase = createClient(
-  "https://yzcxlpxbgwgxtigexghm.supabase.co",
-  "TU_ANON_KEY"
-);
-
-// LOGIN GOOGLE
-async function login() {
-  await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: window.location.origin + "/cloud.html"
-    }
-  });
-}
-
-// LOGOUT
-async function logout() {
-  await supabase.auth.signOut();
-  window.location.reload();
-}
-
-// BOTÓN AUTH
-window.addEventListener("DOMContentLoaded", async () => {
-  const btn = document.getElementById("auth-button");
-
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (user) {
-    btn.textContent = "Cuenta";
-
-    btn.onclick = (e) => {
-      e.preventDefault();
-      logout();
-    };
-  } else {
-    btn.textContent = "Iniciar sesión";
-
-    btn.onclick = (e) => {
-      e.preventDefault();
-      login();
-    };
-  }
-});
-</script>
-
 <body>
 
-<!-- HEADER -->
+<!-- HEADER GLOBAL -->
 <header class="header">
   <div class="container nav">
 
-    <div class="logo">
+    <a href="/" class="logo">
       <img src="logo.png" alt="NLS" style="height:28px;">
       <span class="product">Private Cloud</span>
-    </div>
+    </a>
 
     <nav>
       <a href="/">NLS</a>
       <a href="/cloud.html">Private Cloud</a>
+      <a href="/support.html">Soporte</a>
 
-      <!-- LOGIN BUTTON -->
-      <a href="#" id="auth-button" style="margin-left:20px;">
+      <!-- AUTH BUTTON -->
+      <a href="#" id="auth-button" style="margin-left: 20px;">
         Iniciar sesión
       </a>
     </nav>
 
   </div>
 </header>
+
+<!-- SUBNAV -->
+<div class="subnav">
+  <div class="container">
+    <a href="#features">Features</a>
+    <a href="#os">Sistemas Operativos</a>
+    <a href="#pricing">Planes</a>
+  </div>
+</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -223,7 +184,59 @@ window.addEventListener("DOMContentLoaded", async () => {
   </div>
 </section>
 
-<!-- BUY (SIN ROMPER TU SISTEMA) -->
+<!-- SUPABASE AUTH -->
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://yzcxlpxbgwgxtigexghm.supabase.co",
+  "TU_ANON_KEY"
+);
+
+const btn = document.getElementById("auth-button");
+
+async function login() {
+  await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: window.location.origin
+    }
+  });
+}
+
+async function logout() {
+  await supabase.auth.signOut();
+  window.location.reload();
+}
+
+async function updateUI() {
+  const { data } = await supabase.auth.getSession();
+
+  if (data.session) {
+    btn.textContent = "Cuenta";
+
+    btn.onclick = (e) => {
+      e.preventDefault();
+      logout();
+    };
+  } else {
+    btn.textContent = "Iniciar sesión";
+
+    btn.onclick = (e) => {
+      e.preventDefault();
+      login();
+    };
+  }
+}
+
+updateUI();
+
+supabase.auth.onAuthStateChange(() => {
+  updateUI();
+});
+</script>
+
+<!-- BUY -->
 <script>
 async function buy(plan) {
   const os = document.getElementById("os-" + plan).value;
