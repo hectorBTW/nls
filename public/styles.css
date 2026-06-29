@@ -255,14 +255,4 @@ h2 {
   background: var(--surface);
 }
 
-.price-card {
-  transition: 0.2s ease;
-}
 
-.price-card:hover {
-  transform: translateY(-4px);
-}
-
-button.btn {
-  width: 100%;
-}
