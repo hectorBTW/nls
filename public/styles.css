@@ -259,3 +259,15 @@ select {
     display: none;
   }
 }
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.logo:visited {
+  color: inherit;
+}
