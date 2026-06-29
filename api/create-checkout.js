@@ -15,10 +15,10 @@ export default async function handler(req, res) {
     const { plan, os } = req.body;
 
     const prices = {
-      basic: "price_BASIC_ID",
-      standard: "price_STANDARD_ID",
-      pro: "price_PRO_ID"
-    };
+  basic: "price_1TnPKh8i4wOJdpsZ175IIcfa",
+  standard: "price_1TnPL98i4wOJdpsZpF1jiFI0",
+  pro: "price_1TnPLK8i4wOJdpsZkJRFQHkz"
+};
 
     if (!prices[plan]) {
       return res.status(400).json({ error: "Invalid plan: " + plan });
