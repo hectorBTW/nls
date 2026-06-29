@@ -6,20 +6,26 @@
   <title>NLS | Private Cloud</title>
   <link rel="stylesheet" href="styles.css">
 </head>
+
+<body>
+
+<!-- SUPABASE AUTH -->
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const supabase = createClient(
   "https://yzcxlpxbgwgxtigexghm.supabase.co",
-  "TU_ANON_KEY"
+  "TU_ANON_KEY_AQUI"
 );
+
+const btn = document.getElementById("auth-button");
 
 // LOGIN
 async function login() {
   await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: window.location.origin
+      redirectTo: window.location.origin + "/cloud.html"
     }
   });
 }
@@ -27,70 +33,62 @@ async function login() {
 // LOGOUT
 async function logout() {
   await supabase.auth.signOut();
-  window.location.reload();
 }
 
-// ESPERAR DOM (ESTO ES LA CLAVE)
-window.addEventListener("DOMContentLoaded", async () => {
-  const btn = document.getElementById("auth-button");
+// UI UPDATE
+async function updateUI() {
+  const { data } = await supabase.auth.getUser();
 
-  if (!btn) return;
+  if (data.user) {
+    btn.textContent = "Cuenta";
 
-  // estado inicial correcto
-  const { data: { session } } = await supabase.auth.getSession();
+    btn.onclick = (e) => {
+      e.preventDefault();
+      logout();
+    };
+  } else {
+    btn.textContent = "Iniciar sesión";
 
-  function render(user) {
-    if (user) {
-      btn.textContent = "Cuenta";
-
-      btn.onclick = (e) => {
-        e.preventDefault();
-        logout();
-      };
-    } else {
-      btn.textContent = "Iniciar sesión";
-
-      btn.onclick = (e) => {
-        e.preventDefault();
-        login();
-      };
-    }
+    btn.onclick = (e) => {
+      e.preventDefault();
+      login();
+    };
   }
+}
 
-  render(session?.user);
-
-  // estado en tiempo real (IMPORTANTE)
-  supabase.auth.onAuthStateChange((_event, session) => {
-    render(session?.user);
-  });
+// ESCUCHA CAMBIOS (IMPORTANTE)
+supabase.auth.onAuthStateChange(() => {
+  updateUI();
 });
+
+updateUI();
+
+window.supabase = supabase;
 </script>
-<body>
 
 <!-- HEADER GLOBAL -->
 <header class="header">
   <div class="container nav">
 
-    <!-- LOGO (AHORA ES LINK A HOME) -->
     <a href="/" class="logo">
       <img src="logo.png" alt="NLS" style="height:28px;">
       <span class="product">Private Cloud</span>
     </a>
 
     <nav>
-  <a href="/">NLS</a>
-  <a href="/cloud.html">Private Cloud</a>
-  <a href="/support.html">Soporte</a>
+      <a href="/">NLS</a>
+      <a href="/cloud.html">Private Cloud</a>
+      <a href="/support.html">Soporte</a>
 
-  <a href="#" id="auth-button" style="margin-left: 20px;">
-    Iniciar sesión
-  </a>
-</nav>
+      <a href="#" id="auth-button" style="margin-left: 20px;">
+        Iniciar sesión
+      </a>
+    </nav>
 
   </div>
 </header>
 
-<!-- SUBNAV (CLOUD INTERNAL NAV) -->
+<!-- SUBNAV -->
 <div class="subnav">
   <div class="container">
     <a href="#features">Features</a>
@@ -175,7 +173,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     <div class="pricing">
 
-      <!-- BASIC -->
       <div class="price-card">
         <h3>Basic</h3>
         <p class="price">2,99€</p>
@@ -197,7 +194,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         <button class="btn" onclick="buy('basic')">Contratar</button>
       </div>
 
-      <!-- STANDARD -->
       <div class="price-card highlight">
         <h3>Standard</h3>
         <p class="price">4,99€</p>
@@ -219,7 +215,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         <button class="btn" onclick="buy('standard')">Contratar</button>
       </div>
 
-      <!-- PRO -->
       <div class="price-card">
         <h3>Pro</h3>
         <p class="price">8,99€</p>
@@ -250,26 +245,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 async function buy(plan) {
   const os = document.getElementById("os-" + plan).value;
 
-  // 1. Comprobar sesión (IMPORTANTE)
-  const sessionRes = await fetch("/api/session", {
-    credentials: "include"
-  });
-
-  const session = await sessionRes.json();
-
-  if (!session?.user) {
-    alert("Debes iniciar sesión para contratar un plan");
-    window.location.href = "/login.html";
-    return;
-  }
-
-  // 2. Crear checkout SOLO si está logueado
   const res = await fetch("/api/create-checkout", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ plan, os })
   });
 
