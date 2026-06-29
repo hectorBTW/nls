@@ -1,164 +1,170 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>NLS Cloud</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f0f10;
-      color: white;
-    }
-
-    header {
-      text-align: center;
-      padding: 100px 20px 60px;
-    }
-
-    h1 {
-      font-size: 52px;
-      margin: 0;
-    }
-
-    p {
-      color: #aaa;
-      font-size: 18px;
-    }
-
-    .section {
-      padding: 60px 20px;
-      max-width: 1000px;
-      margin: auto;
-    }
-
-    .grid {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .card {
-      background: #1a1a1d;
-      padding: 20px;
-      border-radius: 12px;
-      width: 260px;
-      text-align: center;
-      border: 1px solid #2a2a2a;
-    }
-
-    .price {
-      font-size: 28px;
-      margin: 10px 0;
-    }
-
-    button {
-      padding: 12px 18px;
-      border: none;
-      border-radius: 10px;
-      background: white;
-      color: black;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    button:hover {
-      opacity: 0.8;
-    }
-
-    select {
-      margin-top: 10px;
-      padding: 8px;
-      border-radius: 6px;
-      width: 100%;
-    }
-
-    footer {
-      text-align: center;
-      padding: 40px;
-      color: #666;
-      font-size: 14px;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NLS | Private Cloud</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<header>
-  <h1>NLS Cloud</h1>
-  <p>VPS instantáneos. Sin complicaciones. Sin espera.</p>
+<header class="header">
+  <div class="container nav">
+
+    <div class="logo">
+      <img src="logo.png" alt="NLS" style="height:28px; vertical-align:middle;">
+      <span style="margin-left:10px; font-weight:300; color:#888;">Private Cloud</span>
+    </div>
+
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#os">OS</a>
+      <a href="#pricing">Plans</a>
+    </nav>
+
+  </div>
 </header>
 
-<!-- ABOUT NLS -->
-<section class="section">
-  <h2 style="text-align:center; font-size:32px;">Sobre NLS</h2>
-  <p style="text-align:center; max-width:700px; margin:auto; color:#aaa;">
-    NLS es una plataforma de infraestructura VPS rápida y simple.
-    Creamos servidores listos en segundos con Ubuntu, AlmaLinux y más.
-  </p>
+<section class="hero">
+  <div class="container">
+    <h1>NLS Private Cloud</h1>
+    <p>Infraestructura aislada con redes privadas, VPS dedicados y backups automáticos.</p>
+  </div>
+</section>
 
-  <div class="grid" style="margin-top:40px;">
-    <div class="card">⚡ <h3>Rápido</h3><p>Deploy en segundos</p></div>
-    <div class="card">🔒 <h3>Seguro</h3><p>Infraestructura aislada</p></div>
-    <div class="card">🌍 <h3>Global</h3><p>Disponible 24/7</p></div>
+<!-- ABOUT NLS (AÑADIDO) -->
+<section class="section" id="about">
+  <div class="container">
+
+    <div class="card" style="text-align:center; padding:40px;">
+      <h2 style="margin-bottom:10px;">Sobre NLS</h2>
+
+      <p style="color:#888; max-width:700px; margin:auto;">
+        NLS es una plataforma de infraestructura cloud privada.
+        Ofrecemos VPS dedicados, redes aisladas y despliegue rápido en segundos.
+      </p>
+
+      <div class="grid" style="margin-top:30px;">
+
+        <div class="card">
+          <h3>Rápido</h3>
+          <p>Deploy en segundos sin configuración compleja.</p>
+        </div>
+
+        <div class="card">
+          <h3>Seguro</h3>
+          <p>Entornos aislados sin acceso cruzado.</p>
+        </div>
+
+        <div class="card">
+          <h3>Privado</h3>
+          <p>Infraestructura diseñada para control total.</p>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" class="section">
+  <div class="container grid">
+
+    <div class="card">
+      <h3>Aislamiento total</h3>
+      <p>Cada VPS está completamente separado del resto de clientes.</p>
+    </div>
+
+    <div class="card">
+      <h3>Red privada</h3>
+      <p>Acceso mediante VPN sin exposición directa a internet.</p>
+    </div>
+
+    <div class="card">
+      <h3>Recursos dedicados</h3>
+      <p>CPU, RAM y disco garantizados por instancia.</p>
+    </div>
+
   </div>
 </section>
 
 <!-- PRICING -->
-<section class="section">
-  <h2 style="text-align:center; font-size:32px;">Planes VPS</h2>
+<section id="pricing" class="section">
+  <div class="container grid">
 
-  <div class="grid">
-
-    <div class="card">
+    <!-- BASIC -->
+    <div class="price-card">
       <h3>Basic</h3>
-      <div class="price">€8.99</div>
+      <p class="price">8,99€</p>
 
+      <ul>
+        <li>2 vCPU</li>
+        <li>4 GB RAM</li>
+        <li>40 GB SSD</li>
+      </ul>
+
+      <label>OS</label>
       <select id="os-basic">
         <option value="ubuntu">Ubuntu</option>
+        <option value="debian">Debian</option>
         <option value="almalinux">AlmaLinux</option>
       </select>
 
-      <button onclick="buy('basic')">Contratar</button>
+      <button class="btn" onclick="buy('basic')">Contratar</button>
     </div>
 
-    <div class="card">
+    <!-- STANDARD -->
+    <div class="price-card">
       <h3>Standard</h3>
-      <div class="price">€14.99</div>
+      <p class="price">14,99€</p>
 
+      <ul>
+        <li>3 vCPU</li>
+        <li>6 GB RAM</li>
+        <li>60 GB SSD</li>
+      </ul>
+
+      <label>OS</label>
       <select id="os-standard">
         <option value="ubuntu">Ubuntu</option>
+        <option value="debian">Debian</option>
         <option value="almalinux">AlmaLinux</option>
       </select>
 
-      <button onclick="buy('standard')">Contratar</button>
+      <button class="btn" onclick="buy('standard')">Contratar</button>
     </div>
 
-    <div class="card">
+    <!-- PRO -->
+    <div class="price-card">
       <h3>Pro</h3>
-      <div class="price">€24.99</div>
+      <p class="price">24,99€</p>
 
+      <ul>
+        <li>4 vCPU</li>
+        <li>8 GB RAM</li>
+        <li>80 GB SSD</li>
+      </ul>
+
+      <label>OS</label>
       <select id="os-pro">
         <option value="ubuntu">Ubuntu</option>
+        <option value="debian">Debian</option>
         <option value="almalinux">AlmaLinux</option>
+        <option value="rocky">Rocky Linux</option>
       </select>
 
-      <button onclick="buy('pro')">Contratar</button>
+      <button class="btn" onclick="buy('pro')">Contratar</button>
     </div>
 
   </div>
 </section>
 
-<footer>
-  © 2026 NLS Cloud - Todos los derechos reservados
-</footer>
-
+<!-- JS STRIPE -->
 <script>
 async function buy(plan) {
+
   const os = document.getElementById("os-" + plan).value;
 
   const res = await fetch("/api/create-checkout", {
