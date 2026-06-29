@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+     <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -33,41 +33,6 @@
   </div>
 </section>
 
-<!-- ABOUT NLS (AÑADIDO) -->
-<section class="section" id="about">
-  <div class="container">
-
-    <div class="card" style="text-align:center; padding:40px;">
-      <h2 style="margin-bottom:10px;">Sobre NLS</h2>
-
-      <p style="color:#888; max-width:700px; margin:auto;">
-        NLS es una plataforma de infraestructura cloud privada.
-        Ofrecemos VPS dedicados, redes aisladas y despliegue rápido en segundos.
-      </p>
-
-      <div class="grid" style="margin-top:30px;">
-
-        <div class="card">
-          <h3>Rápido</h3>
-          <p>Deploy en segundos sin configuración compleja.</p>
-        </div>
-
-        <div class="card">
-          <h3>Seguro</h3>
-          <p>Entornos aislados sin acceso cruzado.</p>
-        </div>
-
-        <div class="card">
-          <h3>Privado</h3>
-          <p>Infraestructura diseñada para control total.</p>
-        </div>
-
-      </div>
-    </div>
-
-  </div>
-</section>
-
 <!-- FEATURES -->
 <section id="features" class="section">
   <div class="container grid">
@@ -87,77 +52,121 @@
       <p>CPU, RAM y disco garantizados por instancia.</p>
     </div>
 
+    <div class="card">
+      <h3>Backups diarios</h3>
+      <p>Copias automáticas incluidas en todos los planes.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- OS -->
+<section id="os" class="section dark">
+  <div class="container">
+
+    <h2>Sistemas operativos</h2>
+
+    <div class="grid">
+
+      <div class="card">
+        <h3>Ubuntu</h3>
+        <p>24.04 / 22.04 LTS</p>
+      </div>
+
+      <div class="card">
+        <h3>Debian</h3>
+        <p>Estable y ligero</p>
+      </div>
+
+      <div class="card">
+        <h3>AlmaLinux</h3>
+        <p>Compatible RHEL</p>
+      </div>
+
+      <div class="card">
+        <h3>Rocky Linux</h3>
+        <p>Enterprise Linux estable</p>
+      </div>
+
+    </div>
   </div>
 </section>
 
 <!-- PRICING -->
 <section id="pricing" class="section">
-  <div class="container grid">
+  <div class="container">
 
-    <!-- BASIC -->
-    <div class="price-card">
-      <h3>Basic</h3>
-      <p class="price">8,99€</p>
+    <h2>Planes</h2>
 
-      <ul>
-        <li>2 vCPU</li>
-        <li>4 GB RAM</li>
-        <li>40 GB SSD</li>
-      </ul>
+    <div class="pricing">
 
-      <label>OS</label>
-      <select id="os-basic">
-        <option value="ubuntu">Ubuntu</option>
-        <option value="debian">Debian</option>
-        <option value="almalinux">AlmaLinux</option>
-      </select>
+      <!-- BASIC -->
+      <div class="price-card">
+        <h3>Basic</h3>
+        <p class="price">2,99€</p>
 
-      <button class="btn" onclick="buy('basic')">Contratar</button>
+        <ul>
+          <li>1 vCPU</li>
+          <li>1 GB RAM</li>
+          <li>20 GB SSD</li>
+        </ul>
+
+        <label>OS</label>
+        <select id="os-basic">
+          <option value="ubuntu">Ubuntu</option>
+          <option value="debian">Debian</option>
+          <option value="almalinux">AlmaLinux</option>
+          <option value="rocky">Rocky Linux</option>
+        </select>
+
+        <button class="btn" onclick="buy('basic')">Contratar</button>
+      </div>
+
+      <!-- STANDARD -->
+      <div class="price-card highlight">
+        <h3>Standard</h3>
+        <p class="price">4,99€</p>
+
+        <ul>
+          <li>2 vCPU</li>
+          <li>2 GB RAM</li>
+          <li>40 GB SSD</li>
+        </ul>
+
+        <label>OS</label>
+        <select id="os-standard">
+          <option value="ubuntu">Ubuntu</option>
+          <option value="debian">Debian</option>
+          <option value="almalinux">AlmaLinux</option>
+          <option value="rocky">Rocky Linux</option>
+        </select>
+
+        <button class="btn" onclick="buy('standard')">Contratar</button>
+      </div>
+
+      <!-- PRO -->
+      <div class="price-card">
+        <h3>Pro</h3>
+        <p class="price">8,99€</p>
+
+        <ul>
+          <li>4 vCPU</li>
+          <li>8 GB RAM</li>
+          <li>80 GB SSD</li>
+        </ul>
+
+        <label>OS</label>
+        <select id="os-pro">
+          <option value="ubuntu">Ubuntu</option>
+          <option value="debian">Debian</option>
+          <option value="almalinux">AlmaLinux</option>
+          <option value="rocky">Rocky Linux</option>
+        </select>
+
+        <button class="btn" onclick="buy('pro')">Contratar</button>
+      </div>
+
     </div>
-
-    <!-- STANDARD -->
-    <div class="price-card">
-      <h3>Standard</h3>
-      <p class="price">14,99€</p>
-
-      <ul>
-        <li>3 vCPU</li>
-        <li>6 GB RAM</li>
-        <li>60 GB SSD</li>
-      </ul>
-
-      <label>OS</label>
-      <select id="os-standard">
-        <option value="ubuntu">Ubuntu</option>
-        <option value="debian">Debian</option>
-        <option value="almalinux">AlmaLinux</option>
-      </select>
-
-      <button class="btn" onclick="buy('standard')">Contratar</button>
-    </div>
-
-    <!-- PRO -->
-    <div class="price-card">
-      <h3>Pro</h3>
-      <p class="price">24,99€</p>
-
-      <ul>
-        <li>4 vCPU</li>
-        <li>8 GB RAM</li>
-        <li>80 GB SSD</li>
-      </ul>
-
-      <label>OS</label>
-      <select id="os-pro">
-        <option value="ubuntu">Ubuntu</option>
-        <option value="debian">Debian</option>
-        <option value="almalinux">AlmaLinux</option>
-        <option value="rocky">Rocky Linux</option>
-      </select>
-
-      <button class="btn" onclick="buy('pro')">Contratar</button>
-    </div>
-
   </div>
 </section>
 
