@@ -13,8 +13,8 @@
   <div class="container nav">
 
     <div class="logo">
-      <img src="logo.png" alt="NLS" style="height:28px; vertical-align:middle;">
-      <span style="margin-left:10px; font-weight:300; color:#888;">Private Cloud</span>
+      <img src="logo.png" alt="NLS" style="height:28px;">
+      <span class="product">Private Cloud</span>
     </div>
 
     <nav>
@@ -30,6 +30,21 @@
   <div class="container">
     <h1>NLS Private Cloud</h1>
     <p>Infraestructura aislada con redes privadas, VPS dedicados y backups automáticos.</p>
+  </div>
+</section>
+
+<!-- ABOUT / NLS -->
+<section class="section alt">
+  <div class="container">
+
+    <div class="card">
+      <h2>Sobre NLS</h2>
+      <p>
+        NLS es una infraestructura cloud privada enfocada en rendimiento, aislamiento y control total.
+        Despliegas VPS en segundos con entornos seguros y recursos dedicados.
+      </p>
+    </div>
+
   </div>
 </section>
 
@@ -61,7 +76,7 @@
 </section>
 
 <!-- OS -->
-<section id="os" class="section dark">
+<section id="os" class="section alt">
   <div class="container">
 
     <h2>Sistemas operativos</h2>
@@ -89,6 +104,7 @@
       </div>
 
     </div>
+
   </div>
 </section>
 
@@ -100,7 +116,6 @@
 
     <div class="pricing">
 
-      <!-- BASIC -->
       <div class="price-card">
         <h3>Basic</h3>
         <p class="price">2,99€</p>
@@ -122,7 +137,6 @@
         <button class="btn" onclick="buy('basic')">Contratar</button>
       </div>
 
-      <!-- STANDARD -->
       <div class="price-card highlight">
         <h3>Standard</h3>
         <p class="price">4,99€</p>
@@ -144,7 +158,6 @@
         <button class="btn" onclick="buy('standard')">Contratar</button>
       </div>
 
-      <!-- PRO -->
       <div class="price-card">
         <h3>Pro</h3>
         <p class="price">8,99€</p>
@@ -170,17 +183,13 @@
   </div>
 </section>
 
-<!-- JS STRIPE -->
 <script>
 async function buy(plan) {
-
   const os = document.getElementById("os-" + plan).value;
 
   const res = await fetch("/api/create-checkout", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ plan, os })
   });
 
@@ -196,4 +205,3 @@ async function buy(plan) {
 
 </body>
 </html>
-
