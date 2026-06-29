@@ -245,3 +245,24 @@ select {
     display: none;
   }
 }
+
+h2 {
+  font-size: 32px;
+  margin-bottom: 15px;
+}
+
+.section.alt {
+  background: var(--surface);
+}
+
+.price-card {
+  transition: 0.2s ease;
+}
+
+.price-card:hover {
+  transform: translateY(-4px);
+}
+
+button.btn {
+  width: 100%;
+}
