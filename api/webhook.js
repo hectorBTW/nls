@@ -30,7 +30,7 @@ export default async function handler(req, res) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "NLS Cloud <noreply@tudominio.com>",
+          from: "onboarding@resend.dev",
           to: "TU_EMAIL_REAL@gmail.com",
           subject: "Nuevo VPS comprado",
           text: `
