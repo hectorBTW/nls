@@ -6,7 +6,55 @@
   <title>NLS | Soporte</title>
   <link rel="stylesheet" href="styles.css">
 </head>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
+const supabase = createClient(
+  "https://yzcxlpxbgwgxtigexghm.supabase.co",
+  "TU_ANON_KEY_AQUI"
+);
+
+// LOGIN GOOGLE
+async function login() {
+  await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: window.location.origin
+    }
+  });
+}
+
+// LOGOUT
+async function logout() {
+  await supabase.auth.signOut();
+  location.reload();
+}
+
+// UI STATE
+const btn = document.getElementById("auth-button");
+
+async function checkUser() {
+  const { data } = await supabase.auth.getUser();
+
+  if (data.user) {
+    btn.textContent = "Cuenta";
+    btn.href = "#";
+
+    btn.onclick = (e) => {
+      e.preventDefault();
+      logout();
+    };
+  } else {
+    btn.textContent = "Iniciar sesión";
+    btn.onclick = (e) => {
+      e.preventDefault();
+      login();
+    };
+  }
+}
+
+checkUser();
+</script>
 <body>
 
 <!-- HEADER GLOBAL -->
