@@ -8,8 +8,8 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// IMPORTANTE: para verificar la firma de Stripe necesitamos el body "crudo",
-// sin parsear. Por eso desactivamos el bodyParser por defecto de Vercel.
+// Necesitamos el body "crudo" (sin parsear) para poder verificar
+// la firma de Stripe. Por eso desactivamos el bodyParser de Vercel.
 export const config = {
   api: {
     bodyParser: false,
@@ -34,8 +34,8 @@ export default async function handler(req, res) {
     const rawBody = await buffer(req);
     const signature = req.headers["stripe-signature"];
 
-    // Esto comprueba que el aviso viene realmente de Stripe y no de
-    // alguien mandando un POST falso a esta URL.
+    // Comprueba que el aviso viene realmente de Stripe, y no de alguien
+    // mandando un POST falso a esta URL simulando un pago.
     event = stripe.webhooks.constructEvent(
       rawBody,
       signature,
@@ -55,42 +55,61 @@ export default async function handler(req, res) {
       const plan = session.metadata?.plan;
       const os = session.metadata?.os;
       const user_id = session.metadata?.user_id;
-      const email = session.customer_details?.email;
+
+      // En modo "subscription", session.subscription y session.customer
+      // ya vienen rellenos en este evento.
+      const stripe_subscription_id = session.subscription || null;
+      const stripe_customer_id = session.customer || null;
 
       console.log("💰 PAYMENT OK");
       console.log("PLAN:", plan);
       console.log("OS:", os);
+      console.log("USER_ID:", user_id);
 
-      // 1. Guardar la orden en Supabase, esto es lo que dispara
-      //    (más adelante) la creación de la VM por el worker.
-      const { data: order, error: insertError } = await supabaseAdmin
-        .from("orders")
+      // 1. Buscar el email del usuario en Supabase usando su user_id
+      //    (no lo pedimos a Stripe, ya lo tenemos en la cuenta del usuario).
+      let userEmail = null;
+      const { data: userData, error: userError } =
+        await supabaseAdmin.auth.admin.getUserById(user_id);
+
+      if (userError) {
+        console.error("❌ ERROR BUSCANDO USUARIO:", userError);
+      } else {
+        userEmail = userData?.user?.email ?? null;
+      }
+
+      // 2. Guardar la VM en Supabase, asociada al user_id.
+      //    Esto es lo que más adelante leerá el worker para crear la VM
+      //    de verdad en Proxmox.
+      const { data: vm, error: insertError } = await supabaseAdmin
+        .from("vms")
         .insert({
           user_id,
-          email,
           plan,
           os,
-          stripe_session_id: session.id,
+          stripe_subscription_id,
+          stripe_customer_id,
           status: "pending",
+          status_message: "Esperando creación en Proxmox",
         })
         .select()
         .single();
 
       if (insertError) {
-        // No paramos el webhook por esto: Stripe seguirá reintentando si
-        // devolvemos error, así que solo lo logueamos para revisarlo.
-        console.error("❌ ERROR GUARDANDO ORDEN:", insertError);
+        // No devolvemos error a Stripe por esto, si no, Stripe reintentará
+        // el webhook entero. Solo lo logueamos para revisarlo a mano.
+        console.error("❌ ERROR GUARDANDO VM:", insertError);
       } else {
-        console.log("✅ ORDEN GUARDADA:", order.id);
+        console.log("✅ VM GUARDADA:", vm.id);
       }
 
-      // 2. Mandar el email de aviso (como ya tenías)
+      // 3. Mandar el email de aviso
       const message = `
 Nuevo VPS:
 Plan: ${plan}
 OS: ${os}
-Email: ${email}
-Order ID: ${order?.id ?? "N/A"}
+Usuario: ${userEmail ?? "desconocido"}
+VM ID: ${vm?.id ?? "N/A"}
       `;
 
       const response = await fetch("https://api.resend.com/emails", {
