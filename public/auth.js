@@ -19,8 +19,14 @@ export async function loginEmail(email, password) {
   return supabase.auth.signInWithPassword({ email, password });
 }
 
-export async function signupEmail(email, password) {
-  return supabase.auth.signUp({ email, password });
+export async function signupEmail(email, password, fullName) {
+  return supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: fullName || "" }
+    }
+  });
 }
 
 export async function logout() {
@@ -55,6 +61,11 @@ function injectModal() {
         <div class="auth-divider"><span>o</span></div>
 
         <form id="auth-email-form">
+          <div id="auth-name-field" style="display:none;">
+            <label class="auth-label" for="auth-name-input">Nombre</label>
+            <input class="auth-input" type="text" id="auth-name-input" autocomplete="name">
+          </div>
+
           <label class="auth-label" for="auth-email-input">Email</label>
           <input class="auth-input" type="email" id="auth-email-input" required autocomplete="email">
 
@@ -84,6 +95,8 @@ function injectModal() {
   const form = document.getElementById("auth-email-form");
   const switchLogin = document.getElementById("auth-switch-login");
   const switchRegister = document.getElementById("auth-switch-register");
+  const nameField = document.getElementById("auth-name-field");
+  const nameInput = document.getElementById("auth-name-input");
 
   function setMode(newMode) {
     mode = newMode;
@@ -93,11 +106,15 @@ function injectModal() {
       submitBtn.textContent = "Iniciar sesión";
       switchLogin.style.display = "inline";
       switchRegister.style.display = "none";
+      nameField.style.display = "none";
+      nameInput.required = false;
     } else {
       title.textContent = "Crear cuenta";
       submitBtn.textContent = "Registrarse";
       switchLogin.style.display = "none";
       switchRegister.style.display = "inline";
+      nameField.style.display = "block";
+      nameInput.required = true;
     }
   }
 
@@ -141,7 +158,8 @@ function injectModal() {
     }
 
     // mode === "register"
-    const { data, error } = await signupEmail(email, password);
+    const fullName = nameInput.value.trim();
+    const { data, error } = await signupEmail(email, password, fullName);
     submitBtn.disabled = false;
 
     if (error) {
