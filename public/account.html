@@ -7,93 +7,6 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-const supabase = createClient(
-  "https://yzcxlpxbgwgxtigexghm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6Y3hscHhiZ3dneHRpZ2V4Z2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NjU1MDIsImV4cCI6MjA5ODM0MTUwMn0.PiFdv0KNXNRyFxPeboBF4-1gc88OjdiHxk9F65RR2qA"
-);
-
-async function login() {
-  await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: window.location.origin + "/account.html"
-    }
-  });
-}
-
-async function logout() {
-  await supabase.auth.signOut();
-  window.location.href = "/";
-}
-
-// Header auth button (igual que en el resto de páginas)
-async function checkUserHeader() {
-  const btn = document.getElementById("auth-button");
-  const { data } = await supabase.auth.getUser();
-
-  if (data.user) {
-    btn.textContent = "Cuenta";
-    btn.href = "/account.html";
-    btn.onclick = null;
-  } else {
-    btn.textContent = "Iniciar sesión";
-    btn.onclick = (e) => {
-      e.preventDefault();
-      login();
-    };
-  }
-}
-
-// Contenido de la página de cuenta
-async function loadAccountContent() {
-  const loading = document.getElementById("account-loading");
-  const loggedOut = document.getElementById("account-logged-out");
-  const loggedIn = document.getElementById("account-logged-in");
-
-  const { data } = await supabase.auth.getUser();
-
-  loading.style.display = "none";
-
-  if (data.user) {
-    loggedIn.style.display = "block";
-
-    const user = data.user;
-    document.getElementById("account-email").textContent = user.email || "—";
-    document.getElementById("account-name").textContent =
-      user.user_metadata?.full_name || user.user_metadata?.name || "—";
-
-    const avatarUrl = user.user_metadata?.avatar_url;
-    if (avatarUrl) {
-      document.getElementById("account-avatar").src = avatarUrl;
-      document.getElementById("account-avatar").style.display = "block";
-    }
-
-    document.getElementById("logout-btn").onclick = (e) => {
-      e.preventDefault();
-      logout();
-    };
-  } else {
-    loggedOut.style.display = "block";
-
-    document.getElementById("login-btn").onclick = (e) => {
-      e.preventDefault();
-      login();
-    };
-  }
-}
-
-checkUserHeader();
-loadAccountContent();
-
-supabase.auth.onAuthStateChange(() => {
-  checkUserHeader();
-  loadAccountContent();
-});
-</script>
-
 <body>
 
 <!-- HEADER GLOBAL -->
@@ -132,9 +45,9 @@ supabase.auth.onAuthStateChange(() => {
     <div id="account-logged-out" style="display:none;">
       <div class="card">
         <h2>No has iniciado sesión</h2>
-        <p>Inicia sesión con tu cuenta de Google para acceder a tu información y gestionar tus servicios.</p>
+        <p>Inicia sesión para acceder a tu información y gestionar tus servicios.</p>
         <button class="btn" id="login-btn" style="width:auto; padding: 12px 24px;">
-          Iniciar sesión con Google
+          Iniciar sesión
         </button>
       </div>
     </div>
@@ -163,6 +76,57 @@ supabase.auth.onAuthStateChange(() => {
 
   </div>
 </section>
+
+<script type="module" src="/auth.js"></script>
+
+<script type="module">
+import { supabase, logout, openAuthModal } from "/auth.js";
+
+async function loadAccountContent() {
+  const loading = document.getElementById("account-loading");
+  const loggedOut = document.getElementById("account-logged-out");
+  const loggedIn = document.getElementById("account-logged-in");
+
+  const { data } = await supabase.auth.getUser();
+
+  loading.style.display = "none";
+
+  if (data.user) {
+    loggedOut.style.display = "none";
+    loggedIn.style.display = "block";
+
+    const user = data.user;
+    document.getElementById("account-email").textContent = user.email || "—";
+    document.getElementById("account-name").textContent =
+      user.user_metadata?.full_name || user.user_metadata?.name || "—";
+
+    const avatarUrl = user.user_metadata?.avatar_url;
+    if (avatarUrl) {
+      const avatarEl = document.getElementById("account-avatar");
+      avatarEl.src = avatarUrl;
+      avatarEl.style.display = "block";
+    }
+
+    document.getElementById("logout-btn").onclick = (e) => {
+      e.preventDefault();
+      logout();
+    };
+  } else {
+    loggedIn.style.display = "none";
+    loggedOut.style.display = "block";
+
+    document.getElementById("login-btn").onclick = (e) => {
+      e.preventDefault();
+      openAuthModal();
+    };
+  }
+}
+
+loadAccountContent();
+supabase.auth.onAuthStateChange(() => {
+  loadAccountContent();
+});
+</script>
 
 </body>
 </html>

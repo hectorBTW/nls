@@ -184,51 +184,6 @@
   </div>
 </section>
 
-<!-- SUPABASE AUTH -->
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-const supabase = createClient(
-  "https://yzcxlpxbgwgxtigexghm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6Y3hscHhiZ3dneHRpZ2V4Z2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NjU1MDIsImV4cCI6MjA5ODM0MTUwMn0.PiFdv0KNXNRyFxPeboBF4-1gc88OjdiHxk9F65RR2qA"
-);
-
-const btn = document.getElementById("auth-button");
-
-async function login() {
-  await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: window.location.origin
-    }
-  });
-}
-
-async function updateUI() {
-  const { data } = await supabase.auth.getSession();
-
-  if (data.session) {
-    btn.textContent = "Cuenta";
-    btn.href = "/account.html";
-    btn.onclick = null;
-  } else {
-    btn.textContent = "Iniciar sesión";
-    btn.href = "#";
-
-    btn.onclick = (e) => {
-      e.preventDefault();
-      login();
-    };
-  }
-}
-
-updateUI();
-
-supabase.auth.onAuthStateChange(() => {
-  updateUI();
-});
-</script>
-
 <!-- BUY -->
 <script>
 async function buy(plan) {
@@ -252,5 +207,6 @@ async function buy(plan) {
 }
 </script>
 
+<script type="module" src="/auth.js"></script>
 </body>
 </html>

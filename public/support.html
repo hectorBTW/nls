@@ -6,60 +6,25 @@
   <title>NLS | Soporte</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-const supabase = createClient(
-  "https://yzcxlpxbgwgxtigexghm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6Y3hscHhiZ3dneHRpZ2V4Z2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NjU1MDIsImV4cCI6MjA5ODM0MTUwMn0.PiFdv0KNXNRyFxPeboBF4-1gc88OjdiHxk9F65RR2qA"
-);
-// LOGIN GOOGLE
-async function login() {
-  await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: window.location.origin
-    }
-  });
-}
-// UI STATE
-const btn = document.getElementById("auth-button");
-async function checkUser() {
-  const { data } = await supabase.auth.getUser();
-  if (data.user) {
-    btn.textContent = "Cuenta";
-    btn.href = "/account.html";
-    btn.onclick = null;
-  } else {
-    btn.textContent = "Iniciar sesión";
-    btn.href = "#";
-    btn.onclick = (e) => {
-      e.preventDefault();
-      login();
-    };
-  }
-}
-checkUser();
-</script>
 <body>
 <!-- HEADER GLOBAL -->
 <header class="header">
   <div class="container nav">
-    <!-- LOGO (AHORA ES LINK A HOME) -->
     <a href="/" class="logo">
       <img src="logo.png" alt="NLS" style="height:28px;">
       <span class="product">Private Cloud</span>
     </a>
-   <nav>
-  <a href="/">NLS</a>
-  <a href="/cloud.html">Private Cloud</a>
-  <a href="/support.html">Soporte</a>
-  <a href="#" id="auth-button" style="margin-left: 20px;">
-    Iniciar sesión
-  </a>
-</nav>
+    <nav>
+      <a href="/">NLS</a>
+      <a href="/cloud.html">Private Cloud</a>
+      <a href="/support.html">Soporte</a>
+      <a href="#" id="auth-button" style="margin-left: 20px;">
+        Iniciar sesión
+      </a>
+    </nav>
   </div>
 </header>
-  
+
 <!-- HERO -->
 <section class="hero">
   <div class="container">
@@ -67,6 +32,7 @@ checkUser();
     <p>Centro de contacto para clientes y consultas de NLS.</p>
   </div>
 </section>
+
 <!-- CONTACT -->
 <section class="section">
   <div class="container" style="max-width: 700px;">
@@ -75,7 +41,7 @@ checkUser();
       Si necesitas ayuda o tienes cualquier consulta, puedes contactar con nosotros directamente.
     </p>
     <div style="padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: white;">
-      
+
       <p style="margin: 0; color: var(--muted); font-size: 14px;">
         Correo electrónico
       </p>
@@ -90,5 +56,7 @@ checkUser();
     </p>
   </div>
 </section>
+
+<script type="module" src="/auth.js"></script>
 </body>
 </html>

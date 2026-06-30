@@ -271,3 +271,153 @@ select {
 .logo:visited {
   color: inherit;
 }
+
+/* =========================
+   AUTH MODAL
+========================= */
+.auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+  padding: 20px;
+}
+
+.auth-modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.auth-modal {
+  background: white;
+  border-radius: 14px;
+  padding: 32px;
+  width: 100%;
+  max-width: 380px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  transform: translateY(8px) scale(0.98);
+  transition: transform 0.18s ease;
+}
+
+.auth-modal-overlay.open .auth-modal {
+  transform: translateY(0) scale(1);
+}
+
+.auth-modal h2 {
+  margin: 0 0 20px 0;
+  font-size: 22px;
+}
+
+.auth-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.auth-modal-close:hover {
+  color: var(--text);
+}
+
+.auth-google-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: white;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.auth-google-btn:hover {
+  background: var(--surface);
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  margin: 18px 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--border);
+}
+
+.auth-divider span {
+  padding: 0 12px;
+}
+
+.auth-label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin: 12px 0 6px 0;
+  font-weight: 500;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: white;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.auth-error {
+  font-size: 13px;
+  margin: 12px 0 0 0;
+  color: #dc2626;
+}
+
+#auth-submit-btn {
+  margin-top: 18px;
+}
+
+.auth-switch {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  margin: 18px 0 0 0;
+}
+
+.auth-switch a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
