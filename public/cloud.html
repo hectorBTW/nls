@@ -185,26 +185,39 @@
 </section>
 
 <!-- BUY -->
-<script>
-async function buy(plan) {
-  const os = document.getElementById("os-" + plan).value;
+<script type="module">
+  import { supabase, openAuthModal } from "/auth.js";
 
-  const res = await fetch("/api/create-checkout", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ plan, os })
-  });
+  // Exponemos buy() en window porque los botones usan onclick="buy(...)"
+  window.buy = async function buy(plan) {
+    // 1. Comprobar si hay sesión iniciada
+    const { data, error } = await supabase.auth.getUser();
 
-  const data = await res.json();
+    if (error || !data.user) {
+      // No hay sesión -> abrir modal de login y cortar la compra
+      openAuthModal();
+      return;
+    }
 
-  if (data.url) {
-    window.location.href = data.url;
-  } else {
-    alert("Error creando checkout");
-  }
-}
+    // 2. Hay sesión -> seguir con el checkout normal
+    const os = document.getElementById("os-" + plan).value;
+
+    const res = await fetch("/api/create-checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ plan, os })
+    });
+
+    const checkoutData = await res.json();
+
+    if (checkoutData.url) {
+      window.location.href = checkoutData.url;
+    } else {
+      alert("Error creando checkout");
+    }
+  };
 </script>
 
 <script type="module" src="/auth.js"></script>
