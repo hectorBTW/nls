@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { Redis } from "@upstash/redis";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -7,6 +8,15 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// Cliente de Redis (Upstash), funciona por HTTP así que va perfecto
+// en una function serverless de Vercel.
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+const QUEUE_KEY = "provision-vm-queue";
 
 // Necesitamos el body "crudo" (sin parsear) para poder verificar
 // la firma de Stripe. Por eso desactivamos el bodyParser de Vercel.
@@ -101,6 +111,18 @@ export default async function handler(req, res) {
         console.error("❌ ERROR GUARDANDO VM:", insertError);
       } else {
         console.log("✅ VM GUARDADA:", vm.id);
+
+        // 2.5 Meter el pedido en la cola para que el worker (en el LXC
+        //     de Proxmox) lo recoja y cree la VM de verdad.
+        try {
+          await redis.lpush(
+            QUEUE_KEY,
+            JSON.stringify({ vm_id: vm.id, plan, os, user_id })
+          );
+          console.log("📦 MENSAJE ENCOLADO:", vm.id);
+        } catch (queueError) {
+          console.error("❌ ERROR ENCOLANDO:", queueError);
+        }
       }
 
       // 3. Mandar el email de aviso
