@@ -89,8 +89,7 @@ export default async function handler(req, res) {
       }
 
       // 2. Guardar la VM en Supabase, asociada al user_id.
-      //    Esto es lo que más adelante leerá el worker para crear la VM
-      //    de verdad en Proxmox.
+      //    Modificado: Cambiado 'pending' por 'provisioning' para cumplir la restricción check constraint.
       const { data: vm, error: insertError } = await supabaseAdmin
         .from("vms")
         .insert({
@@ -99,7 +98,7 @@ export default async function handler(req, res) {
           os,
           stripe_subscription_id,
           stripe_customer_id,
-          status: "pending",
+          status: "provisioning", // ✅ ¡Corregido para saltar el error 23514!
           status_message: "Esperando creación en Proxmox",
         })
         .select()
@@ -110,7 +109,7 @@ export default async function handler(req, res) {
         // el webhook entero. Solo lo logueamos para revisarlo a mano.
         console.error("❌ ERROR GUARDANDO VM:", insertError);
       } else {
-        console.log("✅ VM GUARDADA:", vm.id);
+        console.log("✅ VM GUARDADA EN SUPABASE:", vm.id);
 
         // 2.5 Meter el pedido en la cola para que el worker (en el LXC
         //     de Proxmox) lo recoja y cree la VM de verdad.
@@ -119,37 +118,39 @@ export default async function handler(req, res) {
             QUEUE_KEY,
             JSON.stringify({ vm_id: vm.id, plan, os, user_id })
           );
-          console.log("📦 MENSAJE ENCOLADO:", vm.id);
+          console.log("📦 MENSAJE ENCOLADO EN REDIS:", vm.id);
         } catch (queueError) {
-          console.error("❌ ERROR ENCOLANDO:", queueError);
+          console.error("❌ ERROR ENCOLANDO EN REDIS:", queueError);
         }
-      }
 
-      // 3. Mandar el email de aviso
-      const message = `
+        // 3. Mandar el email de aviso solo si se creó la VM en la BD
+        const message = `
 Nuevo VPS:
 Plan: ${plan}
 OS: ${os}
 Usuario: ${userEmail ?? "desconocido"}
 VM ID: ${vm?.id ?? "N/A"}
-      `;
+        `;
 
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: "onboarding@resend.dev",
-          to: "nolimitsystems41@gmail.com",
-          subject: "Nuevo VPS comprado",
-          text: message,
-        }),
-      });
-
-      console.log("📧 EMAIL SENT");
-      console.log("RESEND STATUS:", response.status);
+        try {
+          const response = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: "onboarding@resend.dev",
+              to: "nolimitsystems41@gmail.com",
+              subject: "Nuevo VPS comprado",
+              text: message,
+            }),
+          });
+          console.log("📧 EMAIL SENT. RESEND STATUS:", response.status);
+        } catch (emailError) {
+          console.error("❌ ERROR ENVIANDO EMAIL:", emailError);
+        }
+      }
     }
 
     return res.status(200).json({ received: true });
