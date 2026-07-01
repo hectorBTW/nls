@@ -423,19 +423,25 @@ select {
 }
 
 /* =========================
-   ACCOUNT LAYOUT (SIDEBAR)
+   ACCOUNT LAYOUT (SIDEBAR FIJO A LA IZQUIERDA)
 ========================= */
 .account-wrapper {
   display: flex;
-  gap: 32px;
   align-items: flex-start;
+  width: 100%;
 }
 
 .account-sidebar {
-  width: 220px;
+  width: 240px;
   flex-shrink: 0;
-  position: sticky;
-  top: calc(var(--header-height) + 24px);
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  bottom: 0;
+  padding: 28px 16px;
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+  overflow-y: auto;
 }
 
 .account-sidebar-title {
@@ -444,7 +450,7 @@ select {
   letter-spacing: 0.05em;
   color: var(--muted);
   font-weight: 600;
-  margin: 0 0 10px 4px;
+  margin: 0 0 10px 12px;
 }
 
 .account-nav {
@@ -474,10 +480,6 @@ select {
   color: var(--accent);
 }
 
-.account-nav a.active .account-nav-icon {
-  opacity: 1;
-}
-
 .account-nav-icon {
   width: 16px;
   height: 16px;
@@ -488,6 +490,9 @@ select {
 .account-main {
   flex: 1;
   min-width: 0;
+  margin-left: 240px;
+  padding: 32px 40px;
+  max-width: 900px;
 }
 
 .account-panel {
@@ -523,15 +528,20 @@ select {
 }
 
 @media (max-width: 800px) {
-  .account-wrapper {
-    flex-direction: column;
-  }
   .account-sidebar {
-    width: 100%;
     position: static;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 16px;
   }
   .account-nav {
     flex-direction: row;
     flex-wrap: wrap;
+  }
+  .account-main {
+    margin-left: 0;
+    padding: 24px 20px;
   }
 }
