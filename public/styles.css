@@ -421,3 +421,117 @@ select {
 .auth-switch a:hover {
   text-decoration: underline;
 }
+
+/* =========================
+   ACCOUNT LAYOUT (SIDEBAR)
+========================= */
+.account-wrapper {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.account-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  top: calc(var(--header-height) + 24px);
+}
+
+.account-sidebar-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-weight: 600;
+  margin: 0 0 10px 4px;
+}
+
+.account-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.account-nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.account-nav a:hover {
+  background: var(--surface);
+}
+
+.account-nav a.active {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.account-nav a.active .account-nav-icon {
+  opacity: 1;
+}
+
+.account-nav-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.account-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-panel {
+  display: none;
+}
+
+.account-panel.active {
+  display: block;
+}
+
+.account-panel h2 {
+  margin: 0 0 6px 0;
+  font-size: 22px;
+}
+
+.account-panel .panel-subtitle {
+  color: var(--muted);
+  margin: 0 0 24px 0;
+  font-size: 14px;
+}
+
+.empty-state {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+@media (max-width: 800px) {
+  .account-wrapper {
+    flex-direction: column;
+  }
+  .account-sidebar {
+    width: 100%;
+    position: static;
+  }
+  .account-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
