@@ -545,3 +545,163 @@ select {
     padding: 24px 20px;
   }
 }
+
+
+/* =========================
+   VM TABLE (estilo AWS)
+========================= */
+.vm-table-wrapper {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.vm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.vm-table thead {
+  background: var(--surface);
+}
+
+.vm-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--border);
+}
+
+.vm-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.vm-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.vm-table tbody tr {
+  cursor: pointer;
+}
+
+.vm-table tbody tr:hover {
+  background: var(--surface);
+}
+
+.vm-name {
+  font-weight: 600;
+}
+
+.vm-id-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'SF Mono', Consolas, monospace;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.vm-copy-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+}
+
+.vm-copy-btn:hover {
+  color: var(--accent);
+}
+
+.vm-copy-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Badge de estado */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.status-running {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.status-running::before { background: #16a34a; }
+
+.status-stopped {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+.status-stopped::before { background: #6b7280; }
+
+.status-provisioning,
+.status-pending,
+.status-restarting {
+  background: #fef3c7;
+  color: #b45309;
+}
+.status-provisioning::before,
+.status-pending::before,
+.status-restarting::before { background: #b45309; }
+
+.status-error,
+.status-failed {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.status-error::before,
+.status-failed::before { background: #dc2626; }
+
+/* Badge de plan */
+.plan-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.plan-basic {
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.plan-standard {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.plan-pro {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+}
+
+.plan-pro::before {
+  content: "★ ";
+}
