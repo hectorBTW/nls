@@ -26,7 +26,7 @@
   </div>
 </header>
 
-<!-- LOADING (antes de saber si hay sesión) -->
+<!-- LOADING -->
 <section class="section" id="account-loading-section">
   <div class="container" style="max-width: 600px;">
     <p id="account-loading" style="color: var(--muted);">Cargando...</p>
@@ -103,9 +103,26 @@
       <!-- VMS -->
       <div class="account-panel" data-panel="vms">
         <h2>Mis Servidores</h2>
-        <p class="panel-subtitle">Gestiona tus servidores en la nube.</p>
-        <div class="empty-state">
-          <p>Empty yet.</p>
+        <p class="panel-subtitle">Consulta el estado y los recursos de tus servidores.</p>
+
+        <div id="vms-loading" style="color: var(--muted); font-size: 14px;">Cargando servidores...</div>
+
+        <div id="vms-empty" class="empty-state" style="display:none;">
+          <p>Todavía no tienes servidores activos.</p>
+        </div>
+
+        <div id="vms-table-wrapper" class="vm-table-wrapper" style="display:none;">
+          <table class="vm-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>ID</th>
+                <th>Estado</th>
+                <th>Plan</th>
+              </tr>
+            </thead>
+            <tbody id="vms-table-body"></tbody>
+          </table>
         </div>
       </div>
 
@@ -175,6 +192,115 @@ window.addEventListener("hashchange", () => {
   setActiveTab(getTabFromHash());
 });
 
+/* ============ ESTADOS DE VM ============ */
+const STATUS_MAP = {
+  running:      { label: "Activa",      class: "status-running" },
+  stopped:      { label: "Apagada",     class: "status-stopped" },
+  provisioning: { label: "Iniciando",   class: "status-provisioning" },
+  pending:      { label: "Iniciando",   class: "status-provisioning" },
+  restarting:   { label: "Reiniciando", class: "status-provisioning" },
+  error:        { label: "Error",       class: "status-error" },
+  failed:       { label: "Error",       class: "status-error" },
+};
+
+function getStatusInfo(status) {
+  return STATUS_MAP[status] || { label: status, class: "status-stopped" };
+}
+
+function capitalize(str) {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ============ CARGA DE VMS ============ */
+async function loadVms(userId) {
+  const loading = document.getElementById("vms-loading");
+  const empty = document.getElementById("vms-empty");
+  const tableWrapper = document.getElementById("vms-table-wrapper");
+  const tbody = document.getElementById("vms-table-body");
+
+  const { data: vms, error } = await supabase
+    .from("vms")
+    .select("id, proxmox_vmid, plan, os, status, status_message, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
+
+  loading.style.display = "none";
+
+  if (error) {
+    empty.style.display = "block";
+    empty.querySelector("p").textContent = "No se pudieron cargar tus servidores. Inténtalo de nuevo más tarde.";
+    return;
+  }
+
+  if (!vms || vms.length === 0) {
+    empty.style.display = "block";
+    return;
+  }
+
+  const counters = {};
+
+  tbody.innerHTML = "";
+  vms.forEach(vm => {
+    const key = `${vm.plan}-${vm.os}`;
+    counters[key] = (counters[key] || 0) + 1;
+    const displayName = `${capitalize(vm.plan)}-${vm.os}-${counters[key]}`;
+
+    const statusInfo = getStatusInfo(vm.status);
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="vm-name">${displayName}</td>
+      <td>
+        <div class="vm-id-cell">
+          <span>${vm.proxmox_vmid ?? "—"}</span>
+          <button class="vm-copy-btn" data-copy="${vm.proxmox_vmid ?? ""}" title="Copiar ID" aria-label="Copiar ID">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>
+          </button>
+        </div>
+      </td>
+      <td>
+        <span class="status-badge ${statusInfo.class}" ${vm.status_message ? `title="${escapeHtml(vm.status_message)}"` : ""}>
+          ${statusInfo.label}
+        </span>
+      </td>
+      <td>
+        <span class="plan-badge plan-${vm.plan}">${vm.plan}</span>
+      </td>
+    `;
+
+    tr.addEventListener("click", (e) => {
+      if (e.target.closest(".vm-copy-btn")) return;
+      // TODO: abrir panel de gestión / noVNC con vm.id
+      console.log("Abrir gestión de VM:", vm.id);
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  tableWrapper.style.display = "block";
+
+  document.querySelectorAll(".vm-copy-btn").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const value = btn.dataset.copy;
+      await navigator.clipboard.writeText(value);
+      const original = btn.innerHTML;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>`;
+      setTimeout(() => { btn.innerHTML = original; }, 1200);
+    });
+  });
+
+  const summaryEl = document.getElementById("summary-vms-count");
+  if (summaryEl) summaryEl.textContent = vms.length;
+}
+
 /* ============ AUTH / CARGA DE DATOS ============ */
 async function loadAccountContent() {
   const loadingSection = document.getElementById("account-loading-section");
@@ -215,9 +341,7 @@ async function loadAccountContent() {
   };
 
   setActiveTab(getTabFromHash());
-
-  // TODO: aquí más adelante llamamos a tu backend/orquestador
-  // para rellenar summary-vms-count y summary-billing con datos reales
+  loadVms(user.id);
 }
 
 loadAccountContent();
