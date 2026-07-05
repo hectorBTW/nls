@@ -713,17 +713,23 @@ select {
   content: "★ ";
 }
 
+/* =========================
+   PANEL DE GESTIÓN DE VM (MODAL)
+========================= */
 .vm-panel-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex; align-items: center; justify-content: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1000;
   padding: 20px;
 }
 
 .vm-panel {
-  background: var(--bg, #111);
-  border: 1px solid var(--border, #333);
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 12px;
   width: 100%;
   max-width: 1200px;
@@ -731,17 +737,35 @@ select {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
 }
 
 .vm-panel-header {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--border, #333);
+  border-bottom: 1px solid var(--border);
+}
+
+.vm-panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .vm-panel-close {
-  background: none; border: none; color: var(--muted, #999);
-  font-size: 24px; cursor: pointer; line-height: 1;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.vm-panel-close:hover {
+  color: var(--text);
 }
 
 .vm-panel-body {
@@ -754,28 +778,33 @@ select {
   width: 280px;
   flex-shrink: 0;
   padding: 20px;
-  border-right: 1px solid var(--border, #333);
+  border-right: 1px solid var(--border);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  background: var(--surface);
 }
 
 .vm-panel-right {
   flex: 1;
   position: relative;
-  background: #000;
+  background: #111827;
 }
 
 .vm-console-frame {
-  width: 100%; height: 100%;
+  width: 100%;
+  height: 100%;
   border: none;
 }
 
 .vm-console-loading {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--muted, #999);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
   font-size: 14px;
 }
 
@@ -784,9 +813,9 @@ select {
   flex-direction: column;
   gap: 10px;
   padding: 14px;
-  border: 1px solid var(--border, #333);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: rgba(255,255,255,0.03);
+  background: white;
 }
 
 .vm-spec-row {
@@ -796,12 +825,12 @@ select {
 }
 
 .vm-spec-label {
-  color: var(--muted, #999);
+  color: var(--muted);
 }
 
 .vm-spec-value {
   font-weight: 600;
-  color: #fff;
+  color: var(--text);
 }
 
 .vm-power-actions {
@@ -812,30 +841,50 @@ select {
 }
 
 .vm-power-btn {
-  display: flex; align-items: center; gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid var(--border, #333);
-  background: rgba(255,255,255,0.04);
-  color: #fff;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--text);
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
 }
-.vm-power-btn svg { width: 16px; height: 16px; }
-.vm-power-btn:hover { background: rgba(255,255,255,0.08); }
-.vm-power-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.vm-power-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.vm-power-btn:hover {
+  background: var(--surface);
+}
+
+.vm-power-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .vm-btn-start:hover { border-color: #16a34a; color: #16a34a; }
-.vm-btn-restart:hover { border-color: #eab308; color: #eab308; }
+.vm-btn-restart:hover { border-color: #d97706; color: #d97706; }
 .vm-btn-stop:hover { border-color: #dc2626; color: #dc2626; }
 
 .vm-action-feedback {
   font-size: 12px;
-  color: var(--muted, #999);
+  color: var(--muted);
   min-height: 16px;
 }
 
 @media (max-width: 800px) {
-  .vm-panel-body { flex-direction: column; }
-  .vm-panel-left { width: 100%; border-right: none; border-bottom: 1px solid var(--border, #333); }
+  .vm-panel-body {
+    flex-direction: column;
+  }
+  .vm-panel-left {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
 }
