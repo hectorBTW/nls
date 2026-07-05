@@ -392,7 +392,7 @@ let reconnectSecondsLeft = 0;
 // STATUS_POLL_MS. Así detectamos que se apagó/encendió/reinició aunque haya
 // pasado por fuera de este panel (apagado desde dentro del SO, fallo de un
 // comando, etc.), sin que el usuario tenga que cerrar y reabrir el panel.
-const STATUS_POLL_MS = 15000;
+const STATUS_POLL_MS = 1000;
 let statusPollTimer = null;
 
 function startStatusPolling(vmid, node, sessionId) {
@@ -712,7 +712,7 @@ async function connectConsole(proxmoxVmid, node, sessionId) {
 
 // Tras un reinicio, cuánto esperar antes de reconectar la consola sola
 // (más corto que el ciclo normal de reconexión por caída, que es de 30s).
-const REBOOT_RECONNECT_MS = 9000;
+const REBOOT_RECONNECT_MS = 8000;
 // Tras encender, cuánto esperar antes de reconectar la consola (la VM tarda
 // menos en tener el proceso VNC listo que tras un reinicio completo).
 const START_RECONNECT_MS = 2500;
