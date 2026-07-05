@@ -724,20 +724,20 @@ select {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 0;
 }
 
 .vm-panel {
   background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  width: 100%;
-  max-width: 1200px;
-  height: 85vh;
+  border: none;
+  border-radius: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  box-shadow: none;
 }
 
 .vm-panel-header {
