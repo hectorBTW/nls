@@ -389,14 +389,20 @@ let consoleSessionId = 0;        // se incrementa cada vez que se abre/cierra el
 let reconnectCountdownTimer = null; // setInterval del contador visible
 let reconnectSecondsLeft = 0;
 
-// Reintentos de conexión tras Encender / Reiniciar: cada 100ms, empezando
-// en un retardo inicial distinto para cada acción, hasta conectar o hasta
-// agotar el tiempo máximo total.
-const RECONNECT_RETRY_INTERVAL_MS = 400;
+// Reintentos de conexión tras Encender / Reiniciar: en vez de disparar
+// intentos en paralelo (lo que causaba parpadeos y comportamiento raro),
+// cada intento se espera por completo (con un tope de tiempo) antes de
+// lanzar el siguiente, dejando una pequeña pausa entre uno y otro.
+const RECONNECT_ATTEMPT_TIMEOUT_MS = 1000; // cuánto esperamos cada intento antes de darlo por fallido
+const RECONNECT_RETRY_GAP_MS = 300;        // pausa entre un intento fallido y el siguiente
 const REBOOT_RECONNECT_INITIAL_MS = 5800;  // primer intento tras reiniciar: 5.8s
 const REBOOT_RECONNECT_MAX_MS = 20000;     // límite total tras reiniciar: 20s
 const START_RECONNECT_INITIAL_MS = 2000;   // primer intento tras encender: 2s
 const START_RECONNECT_MAX_MS = 15000;      // límite total tras encender: 15s
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 // Mientras el panel de una VM está abierto, comprobamos su estado real cada
 // STATUS_POLL_MS. Así detectamos que se apagó/encendió/reinició aunque haya
@@ -635,39 +641,146 @@ function setConsoleDisconnectedMessage(baseText, proxmoxVmid, node, sessionId) {
 }
 
 // Programa reintentos automáticos de conexión a la consola: el primer
-// intento se lanza a los `initialDelayMs` y, si no conecta, se reintenta
-// cada `RECONNECT_RETRY_INTERVAL_MS` (100ms) hasta que se conecte o hasta
-// que pasen `maxTotalMs` desde el momento en que se llamó a esta función
-// (normalmente justo tras pulsar Encender/Reiniciar).
-function scheduleConsoleReconnectLoop(vmid, node, sessionId, initialDelayMs, maxTotalMs) {
+// intento se lanza a los `initialDelayMs`. Si falla, se espera a que ese
+// intento termine del todo (o pase su propio tope de tiempo) y solo
+// entonces se prueba otra vez, tras una pequeña pausa. Así nunca hay dos
+// intentos a la vez, que era lo que causaba parpadeos y comportamiento
+// errático. Sigue así hasta conectar o hasta que pasen `maxTotalMs` desde
+// el momento en que se llamó a esta función (justo tras pulsar
+// Encender/Reiniciar).
+async function scheduleConsoleReconnectLoop(vmid, node, sessionId, initialDelayMs, maxTotalMs) {
   clearReconnectCountdown();
   setConsoleLoadingMessage("Conectando con la consola...");
 
   const deadline = Date.now() + maxTotalMs;
 
-  function attempt() {
-    if (sessionId !== consoleSessionId) return; // el panel ya no es este
-    if (consoleConnected) return;               // ya conectó, dejamos de intentar
+  await sleep(initialDelayMs);
 
-    if (Date.now() >= deadline) {
-      // Se acabó el tiempo máximo sin conectar: aquí sí mostramos el
-      // mensaje de desconexión con su contador de reintento (30s) y botón
-      // de "Reintentar ahora".
-      setConsoleDisconnectedMessage("No se pudo conectar con la consola.", vmid, node, sessionId);
+  while (true) {
+    if (sessionId !== consoleSessionId) return; // el panel ya no es este
+    if (consoleConnected) return;               // ya conectó, terminamos
+    if (Date.now() >= deadline) break;           // se acabó el tiempo máximo
+
+    const connected = await attemptConsoleConnectOnce(vmid, node, sessionId);
+
+    if (connected) return;
+    if (sessionId !== consoleSessionId) return;
+    if (Date.now() >= deadline) break;
+
+    await sleep(RECONNECT_RETRY_GAP_MS);
+  }
+
+  if (sessionId === consoleSessionId && !consoleConnected) {
+    // Se acabó el tiempo máximo sin conectar: aquí sí mostramos el mensaje
+    // de desconexión con su contador de reintento (30s) y botón de
+    // "Reintentar ahora".
+    setConsoleDisconnectedMessage("No se pudo conectar con la consola.", vmid, node, sessionId);
+  }
+}
+
+// Hace un único intento de conexión en segundo plano (sin logs ni cambios
+// visibles de mensaje/contador mientras falla) y devuelve una promesa que
+// resuelve a `true` si conectó o `false` si falló o se agotó su propio
+// tiempo de espera (RECONNECT_ATTEMPT_TIMEOUT_MS). Nunca deja el intento
+// "colgado": siempre resuelve, así el bucle de arriba puede avanzar.
+function attemptConsoleConnectOnce(proxmoxVmid, node, sessionId) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+
+    if (sessionId !== consoleSessionId) {
+      finish(false);
       return;
     }
 
-    // Intento en segundo plano: no genera logs ni cambia el mensaje/contador
-    // visibles mientras el bucle automático sigue en marcha.
-    connectConsole(vmid, node, sessionId, /* silent */ true);
+    const timeoutId = setTimeout(() => finish(false), RECONNECT_ATTEMPT_TIMEOUT_MS);
 
-    setTimeout(attempt, RECONNECT_RETRY_INTERVAL_MS);
-  }
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("super-processor", {
+          body: { vmid: proxmoxVmid, node },
+        });
 
-  setTimeout(attempt, initialDelayMs);
+        if (sessionId !== consoleSessionId || settled) { clearTimeout(timeoutId); finish(false); return; }
+        if (error || !data?.ticket) { clearTimeout(timeoutId); finish(false); return; }
+
+        const { port, ticket } = data;
+        // Conectamos a nuestro relay (no directamente a Proxmox), porque el
+        // navegador no puede mandar la cabecera de autenticación que Proxmox
+        // exige. El relay se encarga de eso y retransmite los bytes.
+        const RELAY_HOST = "hfk09ca2rr0.sn.mynetname.net:8443";
+        const wsUrl =
+          `wss://${RELAY_HOST}/` +
+          `?node=${encodeURIComponent(node)}` +
+          `&vmid=${encodeURIComponent(proxmoxVmid)}` +
+          `&port=${encodeURIComponent(port)}` +
+          `&ticket=${encodeURIComponent(ticket)}`;
+
+        if (currentRfb) {
+          try { currentRfb.disconnect(); } catch (err) {}
+          currentRfb = null;
+        }
+
+        const canvasEl = document.getElementById("vm-console-canvas");
+        const rfb = new RFB(canvasEl, wsUrl, { credentials: { password: ticket } });
+        currentRfb = rfb;
+        rfb.scaleViewport = true;
+        rfb.resizeSession = false;
+
+        rfb.addEventListener("connect", () => {
+          if (sessionId !== consoleSessionId) return;
+          clearTimeout(timeoutId);
+          console.log("[vnc] conectado correctamente");
+          consoleConnected = true;
+          clearReconnectCountdown();
+          document.getElementById("vm-console-loading").style.display = "none";
+          canvasEl.style.display = "block";
+
+          // A partir de aquí ya es la conexión real (no un intento de
+          // fondo): si se cae más adelante, sí queremos loguear y mostrar
+          // el mensaje con contador de reintento.
+          rfb.addEventListener("disconnect", (e) => {
+            if (sessionId !== consoleSessionId) return;
+            consoleConnected = false;
+            console.error("[vnc] disconnect event:", e.detail);
+            const msg = e.detail?.clean
+              ? "Consola desconectada."
+              : "Consola desconectada (error de conexión).";
+            setConsoleDisconnectedMessage(msg, proxmoxVmid, node, sessionId);
+          });
+
+          finish(true);
+        });
+
+        // Este listener solo importa si el intento falla ANTES de conectar
+        // (la conexión real ya tiene su propio listener añadido arriba).
+        rfb.addEventListener("disconnect", () => {
+          clearTimeout(timeoutId);
+          finish(false);
+        });
+
+        rfb.addEventListener("securityfailure", () => {
+          clearTimeout(timeoutId);
+          finish(false);
+        });
+
+        rfb.addEventListener("credentialsrequired", () => {
+          rfb.sendCredentials({ password: ticket });
+        });
+
+      } catch (err) {
+        clearTimeout(timeoutId);
+        finish(false);
+      }
+    })();
+  });
 }
 
-async function connectConsole(proxmoxVmid, node, sessionId, silent = false) {
+async function connectConsole(proxmoxVmid, node, sessionId) {
   const canvasEl = document.getElementById("vm-console-canvas");
 
   // Si mientras pedíamos el ticket el usuario cerró el panel o abrió otra
@@ -675,12 +788,6 @@ async function connectConsole(proxmoxVmid, node, sessionId, silent = false) {
   if (sessionId !== consoleSessionId) return;
 
   consoleConnected = false;
-
-  // `silentMode` empieza igual que `silent`, pero en cuanto la conexión
-  // conecta de verdad pasa a false: a partir de ahí ya no es un intento de
-  // fondo del bucle automático, es la conexión real, así que si se cae más
-  // adelante sí queremos loguear y mostrar el mensaje con contador.
-  let silentMode = silent;
 
   try {
     const { data, error } = await supabase.functions.invoke("super-processor", {
@@ -690,9 +797,7 @@ async function connectConsole(proxmoxVmid, node, sessionId, silent = false) {
     if (sessionId !== consoleSessionId) return;
 
     if (error || !data?.ticket) {
-      if (!silentMode) {
-        setConsoleDisconnectedMessage("No se pudo conectar con la consola.", proxmoxVmid, node, sessionId);
-      }
+      setConsoleDisconnectedMessage("No se pudo conectar con la consola.", proxmoxVmid, node, sessionId);
       return;
     }
 
@@ -708,7 +813,7 @@ async function connectConsole(proxmoxVmid, node, sessionId, silent = false) {
       `&port=${encodeURIComponent(port)}` +
       `&ticket=${encodeURIComponent(ticket)}`;
 
-    if (!silentMode) console.log("[vnc] conectando a", wsUrl);
+    console.log("[vnc] conectando a", wsUrl);
 
     // Si había una conexión anterior de esta misma sesión, la limpiamos antes
     // de crear una nueva (por si acaso).
@@ -728,7 +833,6 @@ async function connectConsole(proxmoxVmid, node, sessionId, silent = false) {
     rfb.addEventListener("connect", () => {
       if (sessionId !== consoleSessionId) return;
       console.log("[vnc] conectado correctamente");
-      silentMode = false; // ya es una conexión real, no un intento de fondo
       consoleConnected = true;
       clearReconnectCountdown();
       document.getElementById("vm-console-loading").style.display = "none";
@@ -738,38 +842,32 @@ async function connectConsole(proxmoxVmid, node, sessionId, silent = false) {
     rfb.addEventListener("disconnect", (e) => {
       if (sessionId !== consoleSessionId) return;
       consoleConnected = false;
-      if (!silentMode) {
-        console.error("[vnc] disconnect event:", e.detail);
-        const msg = e.detail?.clean
-          ? "Consola desconectada."
-          : "Consola desconectada (error de conexión).";
-        setConsoleDisconnectedMessage(msg, proxmoxVmid, node, sessionId);
-      }
+      console.error("[vnc] disconnect event:", e.detail);
+      const msg = e.detail?.clean
+        ? "Consola desconectada."
+        : "Consola desconectada (error de conexión).";
+      setConsoleDisconnectedMessage(msg, proxmoxVmid, node, sessionId);
     });
 
     rfb.addEventListener("securityfailure", (e) => {
       if (sessionId !== consoleSessionId) return;
-      if (!silentMode) {
-        console.error("[vnc] securityfailure:", e.detail);
-        setConsoleDisconnectedMessage(
-          `Fallo de autenticación VNC: ${e.detail?.reason || "desconocido"}`,
-          proxmoxVmid, node, sessionId
-        );
-      }
+      console.error("[vnc] securityfailure:", e.detail);
+      setConsoleDisconnectedMessage(
+        `Fallo de autenticación VNC: ${e.detail?.reason || "desconocido"}`,
+        proxmoxVmid, node, sessionId
+      );
     });
 
     rfb.addEventListener("credentialsrequired", () => {
       if (sessionId !== consoleSessionId) return;
-      if (!silentMode) console.log("[vnc] credentialsrequired, enviando ticket como password");
+      console.log("[vnc] credentialsrequired, enviando ticket como password");
       rfb.sendCredentials({ password: ticket });
     });
 
   } catch (err) {
     if (sessionId !== consoleSessionId) return;
-    if (!silentMode) {
-      console.error(err);
-      setConsoleDisconnectedMessage("Error conectando con la consola.", proxmoxVmid, node, sessionId);
-    }
+    console.error(err);
+    setConsoleDisconnectedMessage("Error conectando con la consola.", proxmoxVmid, node, sessionId);
   }
 }
 
