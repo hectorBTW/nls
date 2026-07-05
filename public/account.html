@@ -102,8 +102,16 @@
 
       <!-- VMS -->
       <div class="account-panel" data-panel="vms">
-        <h2>Mis Servidores</h2>
-        <p class="panel-subtitle">Consulta el estado y los recursos de tus servidores.</p>
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h2 style="margin-bottom:4px;">Mis Servidores</h2>
+            <p class="panel-subtitle" style="margin:0;">Consulta el estado y los recursos de tus servidores.</p>
+          </div>
+          <button class="btn" id="vms-reload-btn" style="width:auto; padding: 10px 18px; display:flex; align-items:center; gap:8px; white-space:nowrap;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"/></svg>
+            Recargar
+          </button>
+        </div>
 
         <div id="vms-loading" style="color: var(--muted); font-size: 14px;">Cargando servidores...</div>
 
@@ -123,6 +131,7 @@
             </thead>
             <tbody id="vms-table-body"></tbody>
           </table>
+
         </div>
       </div>
 
@@ -294,11 +303,42 @@ const PLAN_SPECS = {
 };
 
 /* ============ CARGA DE VMS ============ */
-async function loadVms(userId) {
+// Refresco automático de la tabla de servidores mientras el usuario esté
+// en la página de cuenta (no solo en la pestaña "Mis Servidores"), y
+// estado para el userId actual (lo usa también el botón de recargar).
+const VMS_POLL_MS = 10000;
+let vmsPollTimer = null;
+let currentAccountUserId = null;
+
+function startVmsPolling(userId) {
+  stopVmsPolling();
+  vmsPollTimer = setInterval(() => {
+    loadVms(userId, { showLoadingState: false });
+  }, VMS_POLL_MS);
+}
+
+function stopVmsPolling() {
+  if (vmsPollTimer) {
+    clearInterval(vmsPollTimer);
+    vmsPollTimer = null;
+  }
+}
+
+// `showLoadingState` controla si se muestra "Cargando servidores..." y se
+// oculta la tabla mientras se pide el dato. En la carga inicial sí queremos
+// eso; en los refrescos automáticos cada 10s o al pulsar "Recargar" no,
+// para que la tabla no parpadee/desaparezca si ya había datos.
+async function loadVms(userId, { showLoadingState = true } = {}) {
   const loading = document.getElementById("vms-loading");
   const empty = document.getElementById("vms-empty");
   const tableWrapper = document.getElementById("vms-table-wrapper");
   const tbody = document.getElementById("vms-table-body");
+
+  if (showLoadingState) {
+    loading.style.display = "block";
+    empty.style.display = "none";
+    tableWrapper.style.display = "none";
+  }
 
   const { data: vms, error } = await supabase
     .from("vms")
@@ -311,13 +351,17 @@ async function loadVms(userId) {
   if (error) {
     empty.style.display = "block";
     empty.querySelector("p").textContent = "No se pudieron cargar tus servidores. Inténtalo de nuevo más tarde.";
+    tableWrapper.style.display = "none";
     return;
   }
 
   if (!vms || vms.length === 0) {
     empty.style.display = "block";
+    tableWrapper.style.display = "none";
     return;
   }
+
+  empty.style.display = "none";
 
   const counters = {};
 
@@ -963,6 +1007,8 @@ async function loadAccountContent() {
   if (!data.user) {
     panelSection.style.display = "none";
     loggedOutSection.style.display = "block";
+    stopVmsPolling();
+    currentAccountUserId = null;
     document.getElementById("login-btn").onclick = (e) => {
       e.preventDefault();
       openAuthModal();
@@ -974,6 +1020,7 @@ async function loadAccountContent() {
   panelSection.style.display = "block";
 
   const user = data.user;
+  currentAccountUserId = user.id;
   document.getElementById("account-email").textContent = user.email || "—";
   document.getElementById("account-name").textContent =
     user.user_metadata?.full_name || user.user_metadata?.name || "—";
@@ -992,7 +1039,23 @@ async function loadAccountContent() {
 
   setActiveTab(getTabFromHash());
   loadVms(user.id);
+  startVmsPolling(user.id);
 }
+
+// Botón "Recargar" de la tabla de servidores: fuerza una recarga inmediata
+// sin esperar al ciclo de 10s, sin hacer parpadear la tabla.
+document.getElementById("vms-reload-btn").addEventListener("click", async () => {
+  if (!currentAccountUserId) return;
+  const btn = document.getElementById("vms-reload-btn");
+  btn.disabled = true;
+  btn.style.opacity = "0.6";
+  try {
+    await loadVms(currentAccountUserId, { showLoadingState: false });
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = "1";
+  }
+});
 
 loadAccountContent();
 supabase.auth.onAuthStateChange(() => {
