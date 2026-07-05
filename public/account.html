@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -168,6 +168,73 @@
   </div>
 </section>
 
+<!-- MODAL DE GESTIÓN DE VM -->
+<div id="vm-panel-overlay" class="vm-panel-overlay" style="display:none;">
+  <div class="vm-panel">
+    <div class="vm-panel-header">
+      <h3 id="vm-panel-title">—</h3>
+      <button id="vm-panel-close" class="vm-panel-close" aria-label="Cerrar">&times;</button>
+    </div>
+
+    <div class="vm-panel-body">
+
+      <!-- IZQUIERDA: specs fijas + controles -->
+      <div class="vm-panel-left">
+        <div class="vm-status-row">
+          <span id="vm-panel-status" class="status-badge status-stopped">—</span>
+        </div>
+
+        <div class="vm-specs-block">
+          <div class="vm-spec-row">
+            <span class="vm-spec-label">Plan</span>
+            <span id="vm-spec-plan" class="vm-spec-value">—</span>
+          </div>
+          <div class="vm-spec-row">
+            <span class="vm-spec-label">CPU</span>
+            <span id="vm-spec-cpu" class="vm-spec-value">—</span>
+          </div>
+          <div class="vm-spec-row">
+            <span class="vm-spec-label">RAM</span>
+            <span id="vm-spec-ram" class="vm-spec-value">—</span>
+          </div>
+          <div class="vm-spec-row">
+            <span class="vm-spec-label">Disco</span>
+            <span id="vm-spec-disk" class="vm-spec-value">—</span>
+          </div>
+          <div class="vm-spec-row">
+            <span class="vm-spec-label">Sistema</span>
+            <span id="vm-spec-os" class="vm-spec-value">—</span>
+          </div>
+        </div>
+
+        <div class="vm-power-actions">
+          <button class="vm-power-btn vm-btn-start" data-action="start">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Encender
+          </button>
+          <button class="vm-power-btn vm-btn-restart" data-action="reboot">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"/></svg>
+            Reiniciar
+          </button>
+          <button class="vm-power-btn vm-btn-stop" data-action="stop">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+            Apagar
+          </button>
+        </div>
+
+        <p id="vm-action-feedback" class="vm-action-feedback"></p>
+      </div>
+
+      <!-- DERECHA: consola noVNC -->
+      <div class="vm-panel-right">
+        <div id="vm-console-loading" class="vm-console-loading">Conectando con la consola...</div>
+        <iframe id="vm-console-frame" class="vm-console-frame" style="display:none;" allow="fullscreen"></iframe>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <script type="module" src="/auth.js"></script>
 <script type="module">
 import { supabase, logout, openAuthModal } from "/auth.js";
@@ -217,6 +284,13 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+
+/* ============ SPECS FIJAS POR PLAN ============ */
+const PLAN_SPECS = {
+  basic:    { cpu: "1 vCPU", ram: "1 GB",  disk: "20 GB SSD NVMe" },
+  standard: { cpu: "2 vCPU", ram: "4 GB",  disk: "40 GB SSD NVMe" },
+  pro:      { cpu: "4 vCPU", ram: "8 GB",  disk: "80 GB SSD NVMe" },
+};
 
 /* ============ CARGA DE VMS ============ */
 async function loadVms(userId) {
@@ -277,8 +351,7 @@ async function loadVms(userId) {
 
     tr.addEventListener("click", (e) => {
       if (e.target.closest(".vm-copy-btn")) return;
-      // TODO: abrir panel de gestión / noVNC con vm.id
-      console.log("Abrir gestión de VM:", vm.id);
+      openVmPanel(vm, displayName);
     });
 
     tbody.appendChild(tr);
@@ -300,6 +373,92 @@ async function loadVms(userId) {
   const summaryEl = document.getElementById("summary-vms-count");
   if (summaryEl) summaryEl.textContent = vms.length;
 }
+
+/* ============ PANEL DE GESTIÓN DE VM ============ */
+let currentVmId = null;       // id (uuid) de Supabase
+let currentProxmoxVmid = null; // vmid numérico de Proxmox
+
+function openVmPanel(vm, displayName) {
+  currentVmId = vm.id;
+  currentProxmoxVmid = vm.proxmox_vmid;
+
+  document.getElementById("vm-panel-title").textContent = displayName;
+  document.getElementById("vm-panel-overlay").style.display = "flex";
+  document.getElementById("vm-console-frame").style.display = "none";
+  document.getElementById("vm-console-loading").style.display = "flex";
+  document.getElementById("vm-console-loading").textContent = "Conectando con la consola...";
+  document.getElementById("vm-action-feedback").textContent = "";
+
+  // Estado actual (ya lo tenemos en memoria, sin llamada extra)
+  const statusInfo = getStatusInfo(vm.status);
+  const statusEl = document.getElementById("vm-panel-status");
+  statusEl.textContent = statusInfo.label;
+  statusEl.className = `status-badge ${statusInfo.class}`;
+
+  // Specs fijas según el plan
+  const specs = PLAN_SPECS[vm.plan] || {};
+  document.getElementById("vm-spec-plan").textContent = capitalize(vm.plan);
+  document.getElementById("vm-spec-cpu").textContent = specs.cpu || "—";
+  document.getElementById("vm-spec-ram").textContent = specs.ram || "—";
+  document.getElementById("vm-spec-disk").textContent = specs.disk || "—";
+  document.getElementById("vm-spec-os").textContent = capitalize(vm.os) || "—";
+
+  loadVmConsole(currentProxmoxVmid);
+}
+
+function closeVmPanel() {
+  document.getElementById("vm-panel-overlay").style.display = "none";
+  document.getElementById("vm-console-frame").src = "about:blank";
+  currentVmId = null;
+  currentProxmoxVmid = null;
+}
+
+document.getElementById("vm-panel-close").addEventListener("click", closeVmPanel);
+document.getElementById("vm-panel-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "vm-panel-overlay") closeVmPanel();
+});
+
+async function loadVmConsole(proxmoxVmid) {
+  try {
+    const { data, error } = await supabase.functions.invoke("vm-vnc-ticket", {
+      body: { vmid: proxmoxVmid },
+    });
+    if (error || !data?.url) {
+      document.getElementById("vm-console-loading").textContent = "No se pudo conectar con la consola.";
+      return;
+    }
+    const frame = document.getElementById("vm-console-frame");
+    frame.src = data.url;
+    frame.onload = () => {
+      document.getElementById("vm-console-loading").style.display = "none";
+      frame.style.display = "block";
+    };
+  } catch (err) {
+    document.getElementById("vm-console-loading").textContent = "Error conectando con la consola.";
+  }
+}
+
+document.querySelectorAll(".vm-power-btn").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    if (!currentProxmoxVmid) return;
+    const action = btn.dataset.action;
+    const feedback = document.getElementById("vm-action-feedback");
+
+    document.querySelectorAll(".vm-power-btn").forEach(b => b.disabled = true);
+    feedback.textContent = "Enviando comando...";
+
+    try {
+      const { error } = await supabase.functions.invoke("vm-action", {
+        body: { vmid: currentProxmoxVmid, action },
+      });
+      feedback.textContent = error ? "Error al ejecutar la acción." : "Comando enviado.";
+    } catch (err) {
+      feedback.textContent = "Error al ejecutar la acción.";
+    } finally {
+      document.querySelectorAll(".vm-power-btn").forEach(b => b.disabled = false);
+    }
+  });
+});
 
 /* ============ AUTH / CARGA DE DATOS ============ */
 async function loadAccountContent() {
