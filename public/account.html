@@ -452,10 +452,17 @@ async function loadVmConsole(proxmoxVmid, node) {
       return;
     }
 
-    const { host, port, ticket } = data;
+    const { port, ticket } = data;
+    // Conectamos a nuestro relay (no directamente a Proxmox), porque el
+    // navegador no puede mandar la cookie de autenticación que Proxmox exige.
+    // El relay se encarga de eso y retransmite los bytes.
+    const RELAY_HOST = "hfk09ca2rr0.sn.mynetname.net:8443";
     const wsUrl =
-      `wss://${host}/api2/json/nodes/${node}/qemu/${proxmoxVmid}/vncwebsocket` +
-      `?port=${encodeURIComponent(port)}&vncticket=${encodeURIComponent(ticket)}`;
+      `wss://${RELAY_HOST}/` +
+      `?node=${encodeURIComponent(node)}` +
+      `&vmid=${encodeURIComponent(proxmoxVmid)}` +
+      `&port=${encodeURIComponent(port)}` +
+      `&ticket=${encodeURIComponent(ticket)}`;
 
     console.log("[vnc] conectando a", wsUrl);
 
