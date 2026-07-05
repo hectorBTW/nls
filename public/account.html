@@ -601,11 +601,23 @@ async function connectConsole(proxmoxVmid, node, sessionId) {
   }
 }
 
+// Tras un reinicio, cuánto esperar antes de reconectar la consola sola
+// (más corto que el ciclo normal de reconexión por caída, que es de 30s).
+const REBOOT_RECONNECT_MS = 9000;
+
 document.querySelectorAll(".vm-power-btn").forEach(btn => {
   btn.addEventListener("click", async () => {
     if (!currentProxmoxVmid) return;
     const action = btn.dataset.action;
     const feedback = document.getElementById("vm-action-feedback");
+
+    // Capturamos estos valores en el momento del click: si el usuario cierra
+    // el panel o cambia de VM antes de que pase el tiempo de espera, el check
+    // de sessionId más abajo evita que la reconexión programada actúe sobre
+    // el panel equivocado.
+    const targetVmid = currentProxmoxVmid;
+    const targetNode = currentProxmoxNode;
+    const targetSessionId = consoleSessionId;
 
     document.querySelectorAll(".vm-power-btn").forEach(b => b.disabled = true);
     feedback.textContent = "Enviando comando...";
@@ -614,7 +626,21 @@ document.querySelectorAll(".vm-power-btn").forEach(btn => {
       const { error } = await supabase.functions.invoke("swift-api", {
         body: { vmid: currentProxmoxVmid, node: currentProxmoxNode, action },
       });
-      feedback.textContent = error ? "Error al ejecutar la acción." : "Comando enviado.";
+
+      if (error) {
+        feedback.textContent = "Error al ejecutar la acción.";
+      } else if (action === "reboot") {
+        feedback.textContent = `Comando enviado. Reconectando la consola en ${Math.round(REBOOT_RECONNECT_MS / 1000)}s...`;
+
+        setTimeout(() => {
+          if (targetSessionId !== consoleSessionId) return; // el panel ya no es este
+          clearReconnectCountdown(); // cancela cualquier cuenta atrás de 30s pendiente
+          setConsoleLoadingMessage("Conectando con la consola...");
+          connectConsole(targetVmid, targetNode, targetSessionId);
+        }, REBOOT_RECONNECT_MS);
+      } else {
+        feedback.textContent = "Comando enviado.";
+      }
     } catch (err) {
       feedback.textContent = "Error al ejecutar la acción.";
     } finally {
