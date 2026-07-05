@@ -301,7 +301,7 @@ async function loadVms(userId) {
 
   const { data: vms, error } = await supabase
     .from("vms")
-    .select("id, proxmox_vmid, plan, os, status, status_message, created_at")
+    .select("id, proxmox_vmid, proxmox_node, plan, os, status, status_message, created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
 
@@ -377,10 +377,12 @@ async function loadVms(userId) {
 /* ============ PANEL DE GESTIÓN DE VM ============ */
 let currentVmId = null;       // id (uuid) de Supabase
 let currentProxmoxVmid = null; // vmid numérico de Proxmox
+let currentProxmoxNode = null; // node1 o node2
 
 function openVmPanel(vm, displayName) {
   currentVmId = vm.id;
   currentProxmoxVmid = vm.proxmox_vmid;
+  currentProxmoxNode = vm.proxmox_node;
 
   document.getElementById("vm-panel-title").textContent = displayName;
   document.getElementById("vm-panel-overlay").style.display = "flex";
@@ -403,7 +405,7 @@ function openVmPanel(vm, displayName) {
   document.getElementById("vm-spec-disk").textContent = specs.disk || "—";
   document.getElementById("vm-spec-os").textContent = capitalize(vm.os) || "—";
 
-  loadVmConsole(currentProxmoxVmid);
+  loadVmConsole(currentProxmoxVmid, currentProxmoxNode);
 }
 
 function closeVmPanel() {
@@ -411,6 +413,7 @@ function closeVmPanel() {
   document.getElementById("vm-console-frame").src = "about:blank";
   currentVmId = null;
   currentProxmoxVmid = null;
+  currentProxmoxNode = null;
 }
 
 document.getElementById("vm-panel-close").addEventListener("click", closeVmPanel);
@@ -418,10 +421,10 @@ document.getElementById("vm-panel-overlay").addEventListener("click", (e) => {
   if (e.target.id === "vm-panel-overlay") closeVmPanel();
 });
 
-async function loadVmConsole(proxmoxVmid) {
+async function loadVmConsole(proxmoxVmid, node) {
   try {
-    const { data, error } = await supabase.functions.invoke("vm-vnc-ticket", {
-      body: { vmid: proxmoxVmid },
+    const { data, error } = await supabase.functions.invoke("super-processor", {
+      body: { vmid: proxmoxVmid, node },
     });
     if (error || !data?.url) {
       document.getElementById("vm-console-loading").textContent = "No se pudo conectar con la consola.";
@@ -448,8 +451,8 @@ document.querySelectorAll(".vm-power-btn").forEach(btn => {
     feedback.textContent = "Enviando comando...";
 
     try {
-      const { error } = await supabase.functions.invoke("vm-action", {
-        body: { vmid: currentProxmoxVmid, action },
+      const { error } = await supabase.functions.invoke("swift-api", {
+        body: { vmid: currentProxmoxVmid, node: currentProxmoxNode, action },
       });
       feedback.textContent = error ? "Error al ejecutar la acción." : "Comando enviado.";
     } catch (err) {
