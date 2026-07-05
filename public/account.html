@@ -1,3 +1,4 @@
+<!--account.html, no cambiar el nombre-->>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -303,6 +304,35 @@ const PLAN_SPECS = {
 };
 
 /* ============ CARGA DE VMS ============ */
+// La fila de la DB no se actualiza sola cuando el estado cambia dentro de
+// Proxmox (apagados/arranques hechos fuera del panel, fallos, etc.), así
+// que en cada carga/recarga de la tabla preguntamos a swift-api el estado
+// real de cada VM que ya tenga vmid/node asignado. swift-api de paso
+// sincroniza la fila en Supabase (igual que hace refreshVmStatus dentro
+// del panel de gestión).
+async function refreshVmsStatusesFromProxmox(vms) {
+  return Promise.all(
+    vms.map(async (vm) => {
+      if (!vm.proxmox_vmid || !vm.proxmox_node) return vm; // aún aprovisionando, nada que consultar
+
+      try {
+        const { data, error } = await supabase.functions.invoke("swift-api", {
+          body: { vmid: vm.proxmox_vmid, node: vm.proxmox_node, action: "status" },
+        });
+
+        if (!error && data?.status) {
+          return { ...vm, status: data.status };
+        }
+      } catch (err) {
+        // Si falla la consulta a Proxmox para esta VM, nos quedamos con el
+        // último estado que teníamos en la DB en vez de romper la tabla.
+      }
+
+      return vm;
+    })
+  );
+}
+
 // Refresco automático de la tabla de servidores mientras el usuario esté
 // en la página de cuenta (no solo en la pestaña "Mis Servidores"), y
 // estado para el userId actual (lo usa también el botón de recargar).
@@ -340,7 +370,7 @@ async function loadVms(userId, { showLoadingState = true } = {}) {
     tableWrapper.style.display = "none";
   }
 
-  const { data: vms, error } = await supabase
+  let { data: vms, error } = await supabase
     .from("vms")
     .select("id, proxmox_vmid, proxmox_node, plan, os, status, status_message, created_at")
     .eq("user_id", userId)
@@ -360,6 +390,11 @@ async function loadVms(userId, { showLoadingState = true } = {}) {
     tableWrapper.style.display = "none";
     return;
   }
+
+  // Sincroniza el estado real de cada VM contra Proxmox antes de pintar la
+  // tabla, en vez de fiarnos a ciegas de lo último que quedó guardado en
+  // la DB (que puede estar desactualizado).
+  vms = await refreshVmsStatusesFromProxmox(vms);
 
   empty.style.display = "none";
 
@@ -478,7 +513,9 @@ function openVmPanel(vm, displayName) {
   currentProxmoxVmid = vm.proxmox_vmid;
   currentProxmoxNode = vm.proxmox_node;
 
-  document.getElementById("vm-panel-title").textContent = displayName;
+  document.getElementById("vm-panel-title").textContent = vm.proxmox_vmid
+    ? `${displayName} (ID ${vm.proxmox_vmid})`
+    : displayName;
   document.getElementById("vm-panel-overlay").style.display = "flex";
 
   const canvasEl = document.getElementById("vm-console-canvas");
