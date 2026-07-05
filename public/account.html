@@ -713,6 +713,9 @@ async function connectConsole(proxmoxVmid, node, sessionId) {
 // Tras un reinicio, cuánto esperar antes de reconectar la consola sola
 // (más corto que el ciclo normal de reconexión por caída, que es de 30s).
 const REBOOT_RECONNECT_MS = 9000;
+// Tras encender, cuánto esperar antes de reconectar la consola (la VM tarda
+// menos en tener el proceso VNC listo que tras un reinicio completo).
+const START_RECONNECT_MS = 2500;
 // Tras encender/apagar, cuánto esperar antes de volver a comprobar el
 // estado real (para refrescar badge y botones sin que el usuario tenga que
 // cerrar y reabrir el panel).
@@ -766,6 +769,16 @@ document.querySelectorAll(".vm-power-btn").forEach(btn => {
           connectConsole(targetVmid, targetNode, targetSessionId);
           refreshVmStatus(targetVmid, targetNode, targetSessionId);
         }, REBOOT_RECONNECT_MS);
+      } else if (action === "start") {
+        feedback.textContent = `${messages.done} (~${Math.round(START_RECONNECT_MS / 1000)}s)`;
+
+        setTimeout(() => {
+          if (targetSessionId !== consoleSessionId) return;
+          clearReconnectCountdown();
+          setConsoleLoadingMessage("Conectando con la consola...");
+          connectConsole(targetVmid, targetNode, targetSessionId);
+          refreshVmStatus(targetVmid, targetNode, targetSessionId);
+        }, START_RECONNECT_MS);
       } else {
         feedback.textContent = messages.done;
 
