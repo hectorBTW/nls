@@ -457,6 +457,8 @@ async function loadVmConsole(proxmoxVmid, node) {
       `wss://${host}/api2/json/nodes/${node}/qemu/${proxmoxVmid}/vncwebsocket` +
       `?port=${encodeURIComponent(port)}&vncticket=${encodeURIComponent(ticket)}`;
 
+    console.log("[vnc] conectando a", wsUrl);
+
     currentRfb = new RFB(canvasEl, wsUrl, {
       credentials: { password: ticket },
     });
@@ -465,17 +467,27 @@ async function loadVmConsole(proxmoxVmid, node) {
     currentRfb.resizeSession = false;
 
     currentRfb.addEventListener("connect", () => {
+      console.log("[vnc] conectado correctamente");
       loadingEl.style.display = "none";
       canvasEl.style.display = "block";
     });
 
-    currentRfb.addEventListener("disconnect", () => {
+    currentRfb.addEventListener("disconnect", (e) => {
+      console.error("[vnc] disconnect event:", e.detail);
       loadingEl.style.display = "flex";
-      loadingEl.textContent = "Consola desconectada.";
+      loadingEl.textContent = e.detail?.clean
+        ? "Consola desconectada."
+        : "Consola desconectada (error de conexión, revisa la consola del navegador).";
       canvasEl.style.display = "none";
     });
 
+    currentRfb.addEventListener("securityfailure", (e) => {
+      console.error("[vnc] securityfailure:", e.detail);
+      loadingEl.textContent = `Fallo de autenticación VNC: ${e.detail?.reason || "desconocido"}`;
+    });
+
     currentRfb.addEventListener("credentialsrequired", () => {
+      console.log("[vnc] credentialsrequired, enviando ticket como password");
       currentRfb.sendCredentials({ password: ticket });
     });
 
