@@ -380,6 +380,7 @@ let currentVmId = null;        // id (uuid) de Supabase
 let currentProxmoxVmid = null; // vmid numérico de Proxmox
 let currentProxmoxNode = null; // node1 o node2
 let currentRfb = null;         // instancia activa de noVNC RFB
+let consoleConnected = false;  // true mientras la consola noVNC está realmente conectada
 
 // Control de reconexión automática de la consola.
 const RECONNECT_SECONDS = 30;
@@ -387,6 +388,15 @@ let consoleSessionId = 0;        // se incrementa cada vez que se abre/cierra el
                                    // para ignorar reconexiones "viejas" que ya no aplican.
 let reconnectCountdownTimer = null; // setInterval del contador visible
 let reconnectSecondsLeft = 0;
+
+// Reintentos de conexión tras Encender / Reiniciar: cada 100ms, empezando
+// en un retardo inicial distinto para cada acción, hasta conectar o hasta
+// agotar el tiempo máximo total.
+const RECONNECT_RETRY_INTERVAL_MS = 100;
+const REBOOT_RECONNECT_INITIAL_MS = 5800;  // primer intento tras reiniciar: 5.8s
+const REBOOT_RECONNECT_MAX_MS = 20000;     // límite total tras reiniciar: 20s
+const START_RECONNECT_INITIAL_MS = 2000;   // primer intento tras encender: 2s
+const START_RECONNECT_MAX_MS = 15000;      // límite total tras encender: 15s
 
 // Mientras el panel de una VM está abierto, comprobamos su estado real cada
 // STATUS_POLL_MS. Así detectamos que se apagó/encendió/reinició aunque haya
@@ -467,6 +477,7 @@ function closeVmPanel() {
   consoleSessionId++;
   clearReconnectCountdown();
   stopStatusPolling();
+  consoleConnected = false;
 
   if (currentRfb) {
     try {
@@ -623,12 +634,37 @@ function setConsoleDisconnectedMessage(baseText, proxmoxVmid, node, sessionId) {
   }, 1000);
 }
 
+// Programa reintentos automáticos de conexión a la consola: el primer
+// intento se lanza a los `initialDelayMs` y, si no conecta, se reintenta
+// cada `RECONNECT_RETRY_INTERVAL_MS` (100ms) hasta que se conecte o hasta
+// que pasen `maxTotalMs` desde el momento en que se llamó a esta función
+// (normalmente justo tras pulsar Encender/Reiniciar).
+function scheduleConsoleReconnectLoop(vmid, node, sessionId, initialDelayMs, maxTotalMs) {
+  const deadline = Date.now() + maxTotalMs;
+
+  function attempt() {
+    if (sessionId !== consoleSessionId) return; // el panel ya no es este
+    if (consoleConnected) return;               // ya conectó, dejamos de intentar
+    if (Date.now() >= deadline) return;          // se acabó el tiempo máximo
+
+    clearReconnectCountdown();
+    setConsoleLoadingMessage("Conectando con la consola...");
+    connectConsole(vmid, node, sessionId);
+
+    setTimeout(attempt, RECONNECT_RETRY_INTERVAL_MS);
+  }
+
+  setTimeout(attempt, initialDelayMs);
+}
+
 async function connectConsole(proxmoxVmid, node, sessionId) {
   const canvasEl = document.getElementById("vm-console-canvas");
 
   // Si mientras pedíamos el ticket el usuario cerró el panel o abrió otra
   // VM, esta sesión ya no es la actual: no seguimos.
   if (sessionId !== consoleSessionId) return;
+
+  consoleConnected = false;
 
   try {
     const { data, error } = await supabase.functions.invoke("super-processor", {
@@ -674,6 +710,7 @@ async function connectConsole(proxmoxVmid, node, sessionId) {
     rfb.addEventListener("connect", () => {
       if (sessionId !== consoleSessionId) return;
       console.log("[vnc] conectado correctamente");
+      consoleConnected = true;
       clearReconnectCountdown();
       document.getElementById("vm-console-loading").style.display = "none";
       canvasEl.style.display = "block";
@@ -681,6 +718,7 @@ async function connectConsole(proxmoxVmid, node, sessionId) {
 
     rfb.addEventListener("disconnect", (e) => {
       if (sessionId !== consoleSessionId) return;
+      consoleConnected = false;
       console.error("[vnc] disconnect event:", e.detail);
       const msg = e.detail?.clean
         ? "Consola desconectada."
@@ -710,13 +748,7 @@ async function connectConsole(proxmoxVmid, node, sessionId) {
   }
 }
 
-// Tras un reinicio, cuánto esperar antes de reconectar la consola sola
-// (más corto que el ciclo normal de reconexión por caída, que es de 30s).
-const REBOOT_RECONNECT_MS = 8000;
-// Tras encender, cuánto esperar antes de reconectar la consola (la VM tarda
-// menos en tener el proceso VNC listo que tras un reinicio completo).
-const START_RECONNECT_MS = 2500;
-// Tras encender/apagar, cuánto esperar antes de volver a comprobar el
+// Tras un encendido/apagado, cuánto esperar antes de volver a comprobar el
 // estado real (para refrescar badge y botones sin que el usuario tenga que
 // cerrar y reabrir el panel).
 const POWER_STATUS_REFRESH_MS = 5000;
@@ -760,25 +792,25 @@ document.querySelectorAll(".vm-power-btn").forEach(btn => {
       if (error) {
         feedback.textContent = POWER_ACTION_ERROR;
       } else if (action === "reboot") {
-        feedback.textContent = `${messages.done} (~${Math.round(REBOOT_RECONNECT_MS / 1000)}s)`;
+        feedback.textContent = messages.done;
+
+        clearReconnectCountdown(); // cancela cualquier cuenta atrás de 30s pendiente
+        scheduleConsoleReconnectLoop(targetVmid, targetNode, targetSessionId, REBOOT_RECONNECT_INITIAL_MS, REBOOT_RECONNECT_MAX_MS);
 
         setTimeout(() => {
           if (targetSessionId !== consoleSessionId) return; // el panel ya no es este
-          clearReconnectCountdown(); // cancela cualquier cuenta atrás de 30s pendiente
-          setConsoleLoadingMessage("Conectando con la consola...");
-          connectConsole(targetVmid, targetNode, targetSessionId);
           refreshVmStatus(targetVmid, targetNode, targetSessionId);
-        }, REBOOT_RECONNECT_MS);
+        }, REBOOT_RECONNECT_INITIAL_MS);
       } else if (action === "start") {
-        feedback.textContent = `${messages.done} (~${Math.round(START_RECONNECT_MS / 1000)}s)`;
+        feedback.textContent = messages.done;
+
+        clearReconnectCountdown();
+        scheduleConsoleReconnectLoop(targetVmid, targetNode, targetSessionId, START_RECONNECT_INITIAL_MS, START_RECONNECT_MAX_MS);
 
         setTimeout(() => {
           if (targetSessionId !== consoleSessionId) return;
-          clearReconnectCountdown();
-          setConsoleLoadingMessage("Conectando con la consola...");
-          connectConsole(targetVmid, targetNode, targetSessionId);
           refreshVmStatus(targetVmid, targetNode, targetSessionId);
-        }, START_RECONNECT_MS);
+        }, START_RECONNECT_INITIAL_MS);
       } else {
         feedback.textContent = messages.done;
 
