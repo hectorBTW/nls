@@ -388,6 +388,31 @@ let consoleSessionId = 0;        // se incrementa cada vez que se abre/cierra el
 let reconnectCountdownTimer = null; // setInterval del contador visible
 let reconnectSecondsLeft = 0;
 
+// Mientras el panel de una VM está abierto, comprobamos su estado real cada
+// STATUS_POLL_MS. Así detectamos que se apagó/encendió/reinició aunque haya
+// pasado por fuera de este panel (apagado desde dentro del SO, fallo de un
+// comando, etc.), sin que el usuario tenga que cerrar y reabrir el panel.
+const STATUS_POLL_MS = 15000;
+let statusPollTimer = null;
+
+function startStatusPolling(vmid, node, sessionId) {
+  stopStatusPolling();
+  statusPollTimer = setInterval(() => {
+    if (sessionId !== consoleSessionId) {
+      stopStatusPolling();
+      return;
+    }
+    refreshVmStatus(vmid, node, sessionId);
+  }, STATUS_POLL_MS);
+}
+
+function stopStatusPolling() {
+  if (statusPollTimer) {
+    clearInterval(statusPollTimer);
+    statusPollTimer = null;
+  }
+}
+
 function openVmPanel(vm, displayName) {
   currentVmId = vm.id;
   currentProxmoxVmid = vm.proxmox_vmid;
@@ -422,6 +447,14 @@ function openVmPanel(vm, displayName) {
   clearReconnectCountdown();
   setConsoleLoadingMessage("Conectando con la consola...");
   connectConsole(currentProxmoxVmid, currentProxmoxNode, consoleSessionId);
+
+  // El status.label de arriba viene de la DB, que puede estar desactualizado
+  // (por ejemplo, si apagaste la VM desde dentro del sistema operativo).
+  // Mientras tanto mostramos los botones según ese dato de partida, pero
+  // preguntamos a Proxmox el estado real ahora mismo para corregirlo.
+  applyPowerButtonsForStatus(vm.status);
+  refreshVmStatus(currentProxmoxVmid, currentProxmoxNode, consoleSessionId);
+  startStatusPolling(currentProxmoxVmid, currentProxmoxNode, consoleSessionId);
 }
 
 function closeVmPanel() {
@@ -432,6 +465,7 @@ function closeVmPanel() {
   // consoleSessionId más abajo).
   consoleSessionId++;
   clearReconnectCountdown();
+  stopStatusPolling();
 
   if (currentRfb) {
     try {
@@ -451,6 +485,65 @@ document.getElementById("vm-panel-close").addEventListener("click", closeVmPanel
 document.getElementById("vm-panel-overlay").addEventListener("click", (e) => {
   if (e.target.id === "vm-panel-overlay") closeVmPanel();
 });
+
+// Muestra solo los botones que tienen sentido para el estado real de la VM:
+// Encender solo si está apagada; Apagar y Reiniciar solo si está encendida.
+// Si el estado es desconocido (no se pudo comprobar, o es un estado
+// intermedio tipo "provisioning"), mostramos los tres para no bloquear al
+// usuario, ya que no podemos saber con certeza qué acción tiene sentido.
+function applyPowerButtonsForStatus(status) {
+  const startBtn = document.querySelector(".vm-btn-start");
+  const rebootBtn = document.querySelector(".vm-btn-restart");
+  const stopBtn = document.querySelector(".vm-btn-stop");
+  if (!startBtn || !rebootBtn || !stopBtn) return;
+
+  if (status === "running") {
+    startBtn.style.display = "none";
+    rebootBtn.style.display = "";
+    stopBtn.style.display = "";
+  } else if (status === "stopped") {
+    startBtn.style.display = "";
+    rebootBtn.style.display = "none";
+    stopBtn.style.display = "none";
+  } else {
+    startBtn.style.display = "";
+    rebootBtn.style.display = "";
+    stopBtn.style.display = "";
+  }
+}
+
+// Pregunta a Proxmox el estado REAL de la VM (no el de la DB) a través de
+// swift-api (action: "status"), actualiza el badge de estado, los botones
+// visibles, y de paso swift-api sincroniza la fila en la DB. Si el usuario
+// cerró el panel o cambió de VM mientras esperábamos la respuesta, se
+// ignora el resultado (comprobación de sessionId).
+async function refreshVmStatus(vmid, node, sessionId) {
+  try {
+    const { data, error } = await supabase.functions.invoke("swift-api", {
+      body: { vmid, node, action: "status" },
+    });
+
+    if (sessionId !== consoleSessionId) return null;
+
+    if (error || !data?.status) {
+      // No se pudo comprobar: dejamos los tres botones visibles en vez de
+      // arriesgarnos a ocultar el que hiciera falta.
+      applyPowerButtonsForStatus(null);
+      return null;
+    }
+
+    const statusInfo = getStatusInfo(data.status);
+    const statusEl = document.getElementById("vm-panel-status");
+    statusEl.textContent = statusInfo.label;
+    statusEl.className = `status-badge ${statusInfo.class}`;
+    applyPowerButtonsForStatus(data.status);
+    return data.status;
+  } catch (err) {
+    if (sessionId !== consoleSessionId) return null;
+    applyPowerButtonsForStatus(null);
+    return null;
+  }
+}
 
 function clearReconnectCountdown() {
   if (reconnectCountdownTimer) {
@@ -604,6 +697,10 @@ async function connectConsole(proxmoxVmid, node, sessionId) {
 // Tras un reinicio, cuánto esperar antes de reconectar la consola sola
 // (más corto que el ciclo normal de reconexión por caída, que es de 30s).
 const REBOOT_RECONNECT_MS = 9000;
+// Tras encender/apagar, cuánto esperar antes de volver a comprobar el
+// estado real (para refrescar badge y botones sin que el usuario tenga que
+// cerrar y reabrir el panel).
+const POWER_STATUS_REFRESH_MS = 5000;
 
 document.querySelectorAll(".vm-power-btn").forEach(btn => {
   btn.addEventListener("click", async () => {
@@ -613,8 +710,8 @@ document.querySelectorAll(".vm-power-btn").forEach(btn => {
 
     // Capturamos estos valores en el momento del click: si el usuario cierra
     // el panel o cambia de VM antes de que pase el tiempo de espera, el check
-    // de sessionId más abajo evita que la reconexión programada actúe sobre
-    // el panel equivocado.
+    // de sessionId más abajo evita que la reconexión/comprobación programada
+    // actúe sobre el panel equivocado.
     const targetVmid = currentProxmoxVmid;
     const targetNode = currentProxmoxNode;
     const targetSessionId = consoleSessionId;
@@ -637,9 +734,15 @@ document.querySelectorAll(".vm-power-btn").forEach(btn => {
           clearReconnectCountdown(); // cancela cualquier cuenta atrás de 30s pendiente
           setConsoleLoadingMessage("Conectando con la consola...");
           connectConsole(targetVmid, targetNode, targetSessionId);
+          refreshVmStatus(targetVmid, targetNode, targetSessionId);
         }, REBOOT_RECONNECT_MS);
       } else {
         feedback.textContent = "Comando enviado.";
+
+        setTimeout(() => {
+          if (targetSessionId !== consoleSessionId) return;
+          refreshVmStatus(targetVmid, targetNode, targetSessionId);
+        }, POWER_STATUS_REFRESH_MS);
       }
     } catch (err) {
       feedback.textContent = "Error al ejecutar la acción.";
