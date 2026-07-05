@@ -453,6 +453,7 @@ function openVmPanel(vm, displayName) {
   // Mientras tanto mostramos los botones según ese dato de partida, pero
   // preguntamos a Proxmox el estado real ahora mismo para corregirlo.
   applyPowerButtonsForStatus(vm.status);
+  lastKnownVmStatus = vm.status;
   refreshVmStatus(currentProxmoxVmid, currentProxmoxNode, consoleSessionId);
   startStatusPolling(currentProxmoxVmid, currentProxmoxNode, consoleSessionId);
 }
@@ -486,11 +487,25 @@ document.getElementById("vm-panel-overlay").addEventListener("click", (e) => {
   if (e.target.id === "vm-panel-overlay") closeVmPanel();
 });
 
-// Muestra solo los botones que tienen sentido para el estado real de la VM:
-// Encender solo si está apagada; Apagar y Reiniciar solo si está encendida.
+// Último estado real conocido de la VM del panel abierto. Lo usamos para
+// poder "devolver" los botones a su estado correcto después de una acción,
+// en vez de reactivarlos todos a ciegas.
+let lastKnownVmStatus = null;
+
+// Deja visibles los tres botones siempre, pero atenúa (opacidad + sin click)
+// el/los que no tengan sentido para el estado real de la VM: Encender solo
+// tiene efecto si está apagada; Apagar y Reiniciar solo si está encendida.
 // Si el estado es desconocido (no se pudo comprobar, o es un estado
-// intermedio tipo "provisioning"), mostramos los tres para no bloquear al
-// usuario, ya que no podemos saber con certeza qué acción tiene sentido.
+// intermedio tipo "provisioning"), dejamos los tres activos para no
+// bloquear al usuario, ya que no podemos saber con certeza qué acción tiene
+// sentido.
+function setPowerButtonEnabled(btn, enabled) {
+  btn.disabled = !enabled;
+  btn.style.opacity = enabled ? "1" : "0.4";
+  btn.style.cursor = enabled ? "" : "not-allowed";
+  btn.style.pointerEvents = enabled ? "" : "none";
+}
+
 function applyPowerButtonsForStatus(status) {
   const startBtn = document.querySelector(".vm-btn-start");
   const rebootBtn = document.querySelector(".vm-btn-restart");
@@ -498,17 +513,17 @@ function applyPowerButtonsForStatus(status) {
   if (!startBtn || !rebootBtn || !stopBtn) return;
 
   if (status === "running") {
-    startBtn.style.display = "none";
-    rebootBtn.style.display = "";
-    stopBtn.style.display = "";
+    setPowerButtonEnabled(startBtn, false);
+    setPowerButtonEnabled(rebootBtn, true);
+    setPowerButtonEnabled(stopBtn, true);
   } else if (status === "stopped") {
-    startBtn.style.display = "";
-    rebootBtn.style.display = "none";
-    stopBtn.style.display = "none";
+    setPowerButtonEnabled(startBtn, true);
+    setPowerButtonEnabled(rebootBtn, false);
+    setPowerButtonEnabled(stopBtn, false);
   } else {
-    startBtn.style.display = "";
-    rebootBtn.style.display = "";
-    stopBtn.style.display = "";
+    setPowerButtonEnabled(startBtn, true);
+    setPowerButtonEnabled(rebootBtn, true);
+    setPowerButtonEnabled(stopBtn, true);
   }
 }
 
@@ -536,6 +551,7 @@ async function refreshVmStatus(vmid, node, sessionId) {
     const statusEl = document.getElementById("vm-panel-status");
     statusEl.textContent = statusInfo.label;
     statusEl.className = `status-badge ${statusInfo.class}`;
+    lastKnownVmStatus = data.status;
     applyPowerButtonsForStatus(data.status);
     return data.status;
   } catch (err) {
@@ -702,11 +718,25 @@ const REBOOT_RECONNECT_MS = 9000;
 // cerrar y reabrir el panel).
 const POWER_STATUS_REFRESH_MS = 5000;
 
+const POWER_ACTION_MESSAGES = {
+  start:  { sending: "Iniciando la máquina virtual…",  done: "Encendido en curso. El estado se actualizará en unos segundos." },
+  stop:   { sending: "Apagando la máquina virtual…",   done: "Apagado en curso. El estado se actualizará en unos segundos." },
+  reboot: { sending: "Reiniciando la máquina virtual…", done: "Reinicio en curso. La consola se reconectará automáticamente." },
+};
+const POWER_ACTION_ERROR = "No se pudo completar la acción. Inténtalo de nuevo.";
+
+// Deshabilita/habilita los tres botones sin alterar cuál debería estar
+// atenuado por el estado real de la VM (eso lo decide applyPowerButtonsForStatus).
+function setAllPowerButtonsDisabled(disabled) {
+  document.querySelectorAll(".vm-power-btn").forEach(b => { b.disabled = disabled; });
+}
+
 document.querySelectorAll(".vm-power-btn").forEach(btn => {
   btn.addEventListener("click", async () => {
-    if (!currentProxmoxVmid) return;
+    if (!currentProxmoxVmid || btn.disabled) return;
     const action = btn.dataset.action;
     const feedback = document.getElementById("vm-action-feedback");
+    const messages = POWER_ACTION_MESSAGES[action] || { sending: "Enviando solicitud…", done: "Solicitud enviada." };
 
     // Capturamos estos valores en el momento del click: si el usuario cierra
     // el panel o cambia de VM antes de que pase el tiempo de espera, el check
@@ -716,8 +746,8 @@ document.querySelectorAll(".vm-power-btn").forEach(btn => {
     const targetNode = currentProxmoxNode;
     const targetSessionId = consoleSessionId;
 
-    document.querySelectorAll(".vm-power-btn").forEach(b => b.disabled = true);
-    feedback.textContent = "Enviando comando...";
+    setAllPowerButtonsDisabled(true);
+    feedback.textContent = messages.sending;
 
     try {
       const { error } = await supabase.functions.invoke("swift-api", {
@@ -725,9 +755,9 @@ document.querySelectorAll(".vm-power-btn").forEach(btn => {
       });
 
       if (error) {
-        feedback.textContent = "Error al ejecutar la acción.";
+        feedback.textContent = POWER_ACTION_ERROR;
       } else if (action === "reboot") {
-        feedback.textContent = `Comando enviado. Reconectando la consola en ${Math.round(REBOOT_RECONNECT_MS / 1000)}s...`;
+        feedback.textContent = `${messages.done} (~${Math.round(REBOOT_RECONNECT_MS / 1000)}s)`;
 
         setTimeout(() => {
           if (targetSessionId !== consoleSessionId) return; // el panel ya no es este
@@ -737,7 +767,7 @@ document.querySelectorAll(".vm-power-btn").forEach(btn => {
           refreshVmStatus(targetVmid, targetNode, targetSessionId);
         }, REBOOT_RECONNECT_MS);
       } else {
-        feedback.textContent = "Comando enviado.";
+        feedback.textContent = messages.done;
 
         setTimeout(() => {
           if (targetSessionId !== consoleSessionId) return;
@@ -745,9 +775,12 @@ document.querySelectorAll(".vm-power-btn").forEach(btn => {
         }, POWER_STATUS_REFRESH_MS);
       }
     } catch (err) {
-      feedback.textContent = "Error al ejecutar la acción.";
+      feedback.textContent = POWER_ACTION_ERROR;
     } finally {
-      document.querySelectorAll(".vm-power-btn").forEach(b => b.disabled = false);
+      // No reactivamos los tres a ciegas: respetamos el último estado real
+      // conocido (por ejemplo, si está "running", Encender debe seguir
+      // atenuado aunque acabemos de terminar una llamada).
+      applyPowerButtonsForStatus(lastKnownVmStatus);
     }
   });
 });
