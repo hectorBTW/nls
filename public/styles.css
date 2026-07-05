@@ -755,17 +755,26 @@ select {
 }
 
 .vm-panel-close {
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 50%;
+  color: #dc2626;
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .vm-panel-close:hover {
-  color: var(--text);
+  background: #dc2626;
+  color: white;
+  transform: scale(1.08);
 }
 
 .vm-panel-body {
