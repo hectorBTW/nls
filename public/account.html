@@ -108,9 +108,14 @@
             <h2 style="margin-bottom:4px;">Mis Servidores</h2>
             <p class="panel-subtitle" style="margin:0;">Consulta el estado y los recursos de tus servidores.</p>
           </div>
-          <button class="btn" id="vms-reload-btn" title="Recargar" aria-label="Recargar" style="width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; background:transparent; border:1px solid var(--border); color: var(--muted); box-shadow:none;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"/></svg>
-          </button>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button class="btn" id="vms-buy-btn" style="width:auto; padding: 10px 18px; white-space:nowrap;">
+              Comprar VM
+            </button>
+            <button class="btn" id="vms-reload-btn" title="Recargar" aria-label="Recargar" style="width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; background:transparent; border:1px solid var(--border); color: var(--muted); box-shadow:none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"/></svg>
+            </button>
+          </div>
         </div>
 
         <div id="vms-loading" style="color: var(--muted); font-size: 14px;">Cargando servidores...</div>
@@ -241,6 +246,77 @@
       </div>
 
     </div>
+  </div>
+</div>
+
+<!-- MODAL DE COMPRA DE VM -->
+<div id="vm-buy-overlay" class="vm-panel-overlay" style="display:none;">
+  <div class="card" style="max-width:900px; width:95%; max-height:90vh; overflow-y:auto; padding:28px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+      <h3 style="margin:0;">Comprar un nuevo servidor</h3>
+      <button id="vm-buy-close" aria-label="Cerrar" style="background:none; border:none; font-size:26px; line-height:1; cursor:pointer; color:var(--muted);">&times;</button>
+    </div>
+    <p class="panel-subtitle" style="margin:0 0 20px 0;">Elegí un plan y el sistema operativo.</p>
+
+    <div class="pricing">
+
+      <div class="price-card">
+        <h3>Basic</h3>
+        <p class="price">2,99€</p>
+        <ul>
+          <li>1 vCPU</li>
+          <li>1 GB RAM</li>
+          <li>20 GB SSD NVMe</li>
+        </ul>
+        <label>OS</label>
+        <select id="buy-os-basic">
+          <option value="ubuntu">Ubuntu</option>
+          <option value="debian">Debian</option>
+          <option value="almalinux">AlmaLinux</option>
+          <option value="rocky">Rocky Linux</option>
+        </select>
+        <button class="btn" data-buy-plan="basic">Contratar</button>
+      </div>
+
+      <div class="price-card highlight">
+        <h3>Standard</h3>
+        <p class="price">4,99€</p>
+        <ul>
+          <li>2 vCPU</li>
+          <li>4 GB RAM</li>
+          <li>40 GB SSD NVMe</li>
+        </ul>
+        <label>OS</label>
+        <select id="buy-os-standard">
+          <option value="ubuntu">Ubuntu</option>
+          <option value="debian">Debian</option>
+          <option value="almalinux">AlmaLinux</option>
+          <option value="rocky">Rocky Linux</option>
+        </select>
+        <button class="btn" data-buy-plan="standard">Contratar</button>
+      </div>
+
+      <div class="price-card">
+        <h3>Pro</h3>
+        <p class="price">8,99€</p>
+        <ul>
+          <li>4 vCPU</li>
+          <li>8 GB RAM</li>
+          <li>80 GB SSD NVMe</li>
+        </ul>
+        <label>OS</label>
+        <select id="buy-os-pro">
+          <option value="ubuntu">Ubuntu</option>
+          <option value="debian">Debian</option>
+          <option value="almalinux">AlmaLinux</option>
+          <option value="rocky">Rocky Linux</option>
+        </select>
+        <button class="btn" data-buy-plan="pro">Contratar</button>
+      </div>
+
+    </div>
+
+    <p id="vm-buy-feedback" class="vm-action-feedback" style="margin-top:16px;"></p>
   </div>
 </div>
 
@@ -1027,6 +1103,65 @@ document.querySelectorAll(".vm-power-btn").forEach(btn => {
       // conocido (por ejemplo, si está "running", Encender debe seguir
       // atenuado aunque acabemos de terminar una llamada).
       applyPowerButtonsForStatus(lastKnownVmStatus);
+    }
+  });
+});
+
+/* ============ COMPRAR VM (modal de planes) ============ */
+function openBuyModal() {
+  document.getElementById("vm-buy-feedback").textContent = "";
+  document.getElementById("vm-buy-overlay").style.display = "flex";
+}
+function closeBuyModal() {
+  document.getElementById("vm-buy-overlay").style.display = "none";
+}
+
+document.getElementById("vms-buy-btn").addEventListener("click", openBuyModal);
+document.getElementById("vm-buy-close").addEventListener("click", closeBuyModal);
+document.getElementById("vm-buy-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "vm-buy-overlay") closeBuyModal();
+});
+
+document.querySelectorAll("[data-buy-plan]").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    const plan = btn.dataset.buyPlan;
+    const os = document.getElementById(`buy-os-${plan}`).value;
+    const feedback = document.getElementById("vm-buy-feedback");
+
+    document.querySelectorAll("[data-buy-plan]").forEach(b => b.disabled = true);
+    feedback.textContent = "Creando el pago...";
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      if (!accessToken) {
+        // por si la sesión expiró justo en este momento
+        closeBuyModal();
+        openAuthModal();
+        return;
+      }
+
+      const res = await fetch("/api/create-checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + accessToken
+        },
+        body: JSON.stringify({ plan, os })
+      });
+
+      const checkoutData = await res.json();
+
+      if (checkoutData.url) {
+        window.location.href = checkoutData.url;
+      } else {
+        feedback.textContent = "Error creando el pago. Inténtalo de nuevo.";
+      }
+    } catch (err) {
+      feedback.textContent = "Error creando el pago. Inténtalo de nuevo.";
+    } finally {
+      document.querySelectorAll("[data-buy-plan]").forEach(b => b.disabled = false);
     }
   });
 });
