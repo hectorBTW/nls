@@ -228,7 +228,7 @@
       <!-- DERECHA: consola noVNC -->
       <div class="vm-panel-right">
         <div id="vm-console-loading" class="vm-console-loading">Conectando con la consola...</div>
-        <iframe id="vm-console-frame" class="vm-console-frame" style="display:none;" allow="fullscreen"></iframe>
+        <div id="vm-console-canvas" class="vm-console-frame" style="display:none;"></div>
       </div>
 
     </div>
@@ -238,6 +238,7 @@
 <script type="module" src="/auth.js"></script>
 <script type="module">
 import { supabase, logout, openAuthModal } from "/auth.js";
+import RFB from "https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.js";
 
 /* ============ TABS ============ */
 function setActiveTab(tabName) {
@@ -375,9 +376,10 @@ async function loadVms(userId) {
 }
 
 /* ============ PANEL DE GESTIÓN DE VM ============ */
-let currentVmId = null;       // id (uuid) de Supabase
+let currentVmId = null;        // id (uuid) de Supabase
 let currentProxmoxVmid = null; // vmid numérico de Proxmox
 let currentProxmoxNode = null; // node1 o node2
+let currentRfb = null;         // instancia activa de noVNC RFB
 
 function openVmPanel(vm, displayName) {
   currentVmId = vm.id;
@@ -386,9 +388,15 @@ function openVmPanel(vm, displayName) {
 
   document.getElementById("vm-panel-title").textContent = displayName;
   document.getElementById("vm-panel-overlay").style.display = "flex";
-  document.getElementById("vm-console-frame").style.display = "none";
-  document.getElementById("vm-console-loading").style.display = "flex";
-  document.getElementById("vm-console-loading").textContent = "Conectando con la consola...";
+
+  const canvasEl = document.getElementById("vm-console-canvas");
+  canvasEl.style.display = "none";
+  canvasEl.innerHTML = "";
+
+  const loadingEl = document.getElementById("vm-console-loading");
+  loadingEl.style.display = "flex";
+  loadingEl.textContent = "Conectando con la consola...";
+
   document.getElementById("vm-action-feedback").textContent = "";
 
   // Estado actual (ya lo tenemos en memoria, sin llamada extra)
@@ -410,7 +418,16 @@ function openVmPanel(vm, displayName) {
 
 function closeVmPanel() {
   document.getElementById("vm-panel-overlay").style.display = "none";
-  document.getElementById("vm-console-frame").src = "about:blank";
+
+  if (currentRfb) {
+    try {
+      currentRfb.disconnect();
+    } catch (err) {
+      // ignoramos errores al desconectar, el panel se está cerrando igualmente
+    }
+    currentRfb = null;
+  }
+
   currentVmId = null;
   currentProxmoxVmid = null;
   currentProxmoxNode = null;
@@ -422,22 +439,49 @@ document.getElementById("vm-panel-overlay").addEventListener("click", (e) => {
 });
 
 async function loadVmConsole(proxmoxVmid, node) {
+  const loadingEl = document.getElementById("vm-console-loading");
+  const canvasEl = document.getElementById("vm-console-canvas");
+
   try {
     const { data, error } = await supabase.functions.invoke("super-processor", {
       body: { vmid: proxmoxVmid, node },
     });
-    if (error || !data?.url) {
-      document.getElementById("vm-console-loading").textContent = "No se pudo conectar con la consola.";
+
+    if (error || !data?.ticket) {
+      loadingEl.textContent = "No se pudo conectar con la consola.";
       return;
     }
-    const frame = document.getElementById("vm-console-frame");
-    frame.src = data.url;
-    frame.onload = () => {
-      document.getElementById("vm-console-loading").style.display = "none";
-      frame.style.display = "block";
-    };
+
+    const { host, port, ticket } = data;
+    const wsUrl =
+      `wss://${host}/api2/json/nodes/${node}/qemu/${proxmoxVmid}/vncwebsocket` +
+      `?port=${encodeURIComponent(port)}&vncticket=${encodeURIComponent(ticket)}`;
+
+    currentRfb = new RFB(canvasEl, wsUrl, {
+      credentials: { password: ticket },
+    });
+
+    currentRfb.scaleViewport = true;
+    currentRfb.resizeSession = false;
+
+    currentRfb.addEventListener("connect", () => {
+      loadingEl.style.display = "none";
+      canvasEl.style.display = "block";
+    });
+
+    currentRfb.addEventListener("disconnect", () => {
+      loadingEl.style.display = "flex";
+      loadingEl.textContent = "Consola desconectada.";
+      canvasEl.style.display = "none";
+    });
+
+    currentRfb.addEventListener("credentialsrequired", () => {
+      currentRfb.sendCredentials({ password: ticket });
+    });
+
   } catch (err) {
-    document.getElementById("vm-console-loading").textContent = "Error conectando con la consola.";
+    console.error(err);
+    loadingEl.textContent = "Error conectando con la consola.";
   }
 }
 
