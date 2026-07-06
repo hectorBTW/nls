@@ -5,6 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NLS | Private Cloud</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    .os-picker {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .os-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text);
+      text-align: left;
+    }
+    .os-option img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .os-option:hover {
+      background: var(--surface);
+    }
+    .os-option.selected {
+      border-color: var(--accent);
+      background: #eff6ff;
+      color: var(--accent);
+      font-weight: 600;
+    }
+  </style>
 </head>
 
 <body>
@@ -127,9 +164,23 @@
           <li>20 GB SSD NVMe</li>
         </ul>
 
-        <label>OS</label>
-        <select id="os-basic">
-          <option value="ubuntu">Ubuntu</option>
+        <label>Sistema operativo</label>
+        <div class="os-picker" data-os-picker="basic">
+          <button type="button" class="os-option selected" data-os="ubuntu">
+            <img src="ubuntu.png" alt=""><span>Ubuntu</span>
+          </button>
+          <button type="button" class="os-option" data-os="debian">
+            <img src="debian.png" alt=""><span>Debian</span>
+          </button>
+          <button type="button" class="os-option" data-os="almalinux">
+            <img src="alma.png" alt=""><span>AlmaLinux</span>
+          </button>
+          <button type="button" class="os-option" data-os="rocky">
+            <img src="rocky.png" alt=""><span>Rocky Linux</span>
+          </button>
+        </div>
+        <select id="os-basic" style="display:none;">
+          <option value="ubuntu" selected>Ubuntu</option>
           <option value="debian">Debian</option>
           <option value="almalinux">AlmaLinux</option>
           <option value="rocky">Rocky Linux</option>
@@ -148,9 +199,23 @@
           <li>40 GB SSD NVMe</li>
         </ul>
 
-        <label>OS</label>
-        <select id="os-standard">
-          <option value="ubuntu">Ubuntu</option>
+        <label>Sistema operativo</label>
+        <div class="os-picker" data-os-picker="standard">
+          <button type="button" class="os-option selected" data-os="ubuntu">
+            <img src="ubuntu.png" alt=""><span>Ubuntu</span>
+          </button>
+          <button type="button" class="os-option" data-os="debian">
+            <img src="debian.png" alt=""><span>Debian</span>
+          </button>
+          <button type="button" class="os-option" data-os="almalinux">
+            <img src="alma.png" alt=""><span>AlmaLinux</span>
+          </button>
+          <button type="button" class="os-option" data-os="rocky">
+            <img src="rocky.png" alt=""><span>Rocky Linux</span>
+          </button>
+        </div>
+        <select id="os-standard" style="display:none;">
+          <option value="ubuntu" selected>Ubuntu</option>
           <option value="debian">Debian</option>
           <option value="almalinux">AlmaLinux</option>
           <option value="rocky">Rocky Linux</option>
@@ -169,9 +234,23 @@
           <li>80 GB SSD NVMe</li>
         </ul>
 
-        <label>OS</label>
-        <select id="os-pro">
-          <option value="ubuntu">Ubuntu</option>
+        <label>Sistema operativo</label>
+        <div class="os-picker" data-os-picker="pro">
+          <button type="button" class="os-option selected" data-os="ubuntu">
+            <img src="ubuntu.png" alt=""><span>Ubuntu</span>
+          </button>
+          <button type="button" class="os-option" data-os="debian">
+            <img src="debian.png" alt=""><span>Debian</span>
+          </button>
+          <button type="button" class="os-option" data-os="almalinux">
+            <img src="alma.png" alt=""><span>AlmaLinux</span>
+          </button>
+          <button type="button" class="os-option" data-os="rocky">
+            <img src="rocky.png" alt=""><span>Rocky Linux</span>
+          </button>
+        </div>
+        <select id="os-pro" style="display:none;">
+          <option value="ubuntu" selected>Ubuntu</option>
           <option value="debian">Debian</option>
           <option value="almalinux">AlmaLinux</option>
           <option value="rocky">Rocky Linux</option>
@@ -187,6 +266,19 @@
 <!-- BUY -->
 <script type="module">
   import { supabase, openAuthModal } from "/auth.js";
+
+  /* ============ SELECTOR DE SO CON LOGOS ============ */
+  document.querySelectorAll(".os-picker").forEach(picker => {
+    const plan = picker.dataset.osPicker;
+    const hiddenSelect = document.getElementById(`os-${plan}`);
+    picker.querySelectorAll(".os-option").forEach(btn => {
+      btn.addEventListener("click", () => {
+        picker.querySelectorAll(".os-option").forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        if (hiddenSelect) hiddenSelect.value = btn.dataset.os;
+      });
+    });
+  });
 
   // Exponemos buy() en window porque los botones usan onclick="buy(...)"
   window.buy = async function buy(plan) {
