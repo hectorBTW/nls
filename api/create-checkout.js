@@ -39,7 +39,6 @@ export default async function handler(req, res) {
     // 3. Parsear body
     const body =
       typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-
     const { plan, os } = body || {};
 
     const prices = {
@@ -63,8 +62,8 @@ export default async function handler(req, res) {
       ],
       metadata: { plan, os, user_id: user.id, email: user.email },
       customer_email: user.email,
-      success_url: "https://nls-a1kl704b3-hectorbtws-projects.vercel.app/",
-      cancel_url: "https://nls-a1kl704b3-hectorbtws-projects.vercel.app/",
+      success_url: "https://nls-one.vercel.app/account.html#vms",
+      cancel_url: "https://nls-one.vercel.app/cloud.html",
     });
 
     return res.status(200).json({ url: session.url });
