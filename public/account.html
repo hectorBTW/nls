@@ -1,4 +1,3 @@
-<!--account.html, no cambiar el nombre-->>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -42,11 +41,25 @@
       color: var(--accent);
       font-weight: 600;
     }
+
+    /* CAMBIO 2 — CSS: bloque de credenciales */
+    .vm-credentials-block {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .vm-credentials-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin: 0 0 8px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
   </style>
 </head>
 <body>
 
-<!-- HEADER GLOBAL -->
 <header class="header">
   <div class="container nav">
     <a href="/" class="logo">
@@ -64,14 +77,12 @@
   </div>
 </header>
 
-<!-- LOADING -->
 <section class="section" id="account-loading-section">
   <div class="container" style="max-width: 600px;">
     <p id="account-loading" style="color: var(--muted);">Cargando...</p>
   </div>
 </section>
 
-<!-- LOGGED OUT -->
 <section class="section" id="account-logged-out-section" style="display:none;">
   <div class="container" style="max-width: 600px;">
     <div class="card">
@@ -84,11 +95,9 @@
   </div>
 </section>
 
-<!-- PANEL DE CUENTA (solo si hay sesión) -->
 <section class="section" id="account-panel-section" style="display:none; padding: 0;">
   <div class="account-wrapper">
 
-    <!-- SIDEBAR -->
     <aside class="account-sidebar">
       <p class="account-sidebar-title">Cuenta</p>
       <nav class="account-nav" id="account-nav">
@@ -115,10 +124,8 @@
       </nav>
     </aside>
 
-    <!-- CONTENIDO -->
     <div class="account-main">
 
-      <!-- RESUMEN -->
       <div class="account-panel" data-panel="resumen">
         <h2>Resumen</h2>
         <p class="panel-subtitle">Vista general de tu cuenta.</p>
@@ -138,7 +145,6 @@
         </div>
       </div>
 
-      <!-- VMS -->
       <div class="account-panel" data-panel="vms">
         <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
           <div>
@@ -177,7 +183,6 @@
         </div>
       </div>
 
-      <!-- FACTURACION -->
       <div class="account-panel" data-panel="facturacion">
         <h2>Facturación</h2>
         <p class="panel-subtitle">Historial de pagos y método de pago.</p>
@@ -186,7 +191,6 @@
         </div>
       </div>
 
-      <!-- SEGURIDAD -->
       <div class="account-panel" data-panel="seguridad">
         <h2>Seguridad</h2>
         <p class="panel-subtitle">Contraseña, sesiones activas y autenticación en dos pasos.</p>
@@ -195,7 +199,6 @@
         </div>
       </div>
 
-      <!-- PERFIL -->
       <div class="account-panel" data-panel="perfil">
         <h2>Perfil</h2>
         <p class="panel-subtitle">Tus datos de acceso.</p>
@@ -219,7 +222,6 @@
   </div>
 </section>
 
-<!-- MODAL DE GESTIÓN DE VM -->
 <div id="vm-panel-overlay" class="vm-panel-overlay" style="display:none;">
   <div class="vm-panel">
     <div class="vm-panel-header">
@@ -229,7 +231,6 @@
 
     <div class="vm-panel-body">
 
-      <!-- IZQUIERDA: specs fijas + controles -->
       <div class="vm-panel-left">
         <div class="vm-status-row">
           <span id="vm-panel-status" class="status-badge status-stopped">—</span>
@@ -258,6 +259,33 @@
           </div>
         </div>
 
+        <div class="vm-credentials-block">
+          <p class="vm-credentials-title">Acceso inicial</p>
+
+          <div class="vm-spec-row">
+            <span class="vm-spec-label">Usuario</span>
+            <span id="vm-cred-username" class="vm-spec-value">—</span>
+          </div>
+
+          <div class="vm-spec-row">
+            <span class="vm-spec-label">Contraseña</span>
+            <span style="display:flex; align-items:center; gap:6px;">
+              <span id="vm-cred-password" class="vm-spec-value">••••••••</span>
+              <button id="vm-cred-toggle-btn" class="vm-copy-btn" title="Mostrar contraseña" aria-label="Mostrar contraseña">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+              <button id="vm-cred-copy-btn" class="vm-copy-btn" title="Copiar contraseña" aria-label="Copiar contraseña" style="display:none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>
+              </button>
+            </span>
+          </div>
+
+          <p id="vm-cred-feedback" class="vm-action-feedback" style="min-height:auto; margin-top:4px;"></p>
+        </div>
+
         <div class="vm-power-actions">
           <button class="vm-power-btn vm-btn-start" data-action="start">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -276,7 +304,6 @@
         <p id="vm-action-feedback" class="vm-action-feedback"></p>
       </div>
 
-      <!-- DERECHA: consola noVNC -->
       <div class="vm-panel-right">
         <div id="vm-console-loading" class="vm-console-loading">Conectando con la consola...</div>
         <div id="vm-console-canvas" class="vm-console-frame" style="display:none;"></div>
@@ -286,7 +313,6 @@
   </div>
 </div>
 
-<!-- MODAL DE COMPRA DE VM -->
 <div id="vm-buy-overlay" class="vm-panel-overlay" style="display:none;">
   <div class="card" style="max-width:900px; width:95%; max-height:90vh; overflow-y:auto; padding:28px;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
@@ -404,6 +430,9 @@
 import { supabase, logout, openAuthModal } from "/auth.js";
 import RFB from "https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.js";
 
+/* CAMBIO 3c — Definición de la URL del proyecto Supabase */
+const SUPABASE_URL = "https://yzcxlpxbgwgxtigexghm.supabase.co";
+
 /* ============ TABS ============ */
 function setActiveTab(tabName) {
   document.querySelectorAll(".account-nav a").forEach(a => {
@@ -458,16 +487,10 @@ const PLAN_SPECS = {
 };
 
 /* ============ CARGA DE VMS ============ */
-// La fila de la DB no se actualiza sola cuando el estado cambia dentro de
-// Proxmox (apagados/arranques hechos fuera del panel, fallos, etc.), así
-// que en cada carga/recarga de la tabla preguntamos a swift-api el estado
-// real de cada VM que ya tenga vmid/node asignado. swift-api de paso
-// sincroniza la fila en Supabase (igual que hace refreshVmStatus dentro
-// del panel de gestión).
 async function refreshVmsStatusesFromProxmox(vms) {
   return Promise.all(
     vms.map(async (vm) => {
-      if (!vm.proxmox_vmid || !vm.proxmox_node) return vm; // aún aprovisionando, nada que consultar
+      if (!vm.proxmox_vmid || !vm.proxmox_node) return vm; 
 
       try {
         const { data, error } = await supabase.functions.invoke("swift-api", {
@@ -478,8 +501,6 @@ async function refreshVmsStatusesFromProxmox(vms) {
           return { ...vm, status: data.status };
         }
       } catch (err) {
-        // Si falla la consulta a Proxmox para esta VM, nos quedamos con el
-        // último estado que teníamos en la DB en vez de romper la tabla.
       }
 
       return vm;
@@ -487,9 +508,6 @@ async function refreshVmsStatusesFromProxmox(vms) {
   );
 }
 
-// Refresco automático de la tabla de servidores mientras el usuario esté
-// en la página de cuenta (no solo en la pestaña "Mis Servidores"), y
-// estado para el userId actual (lo usa también el botón de recargar).
 const VMS_POLL_MS = 10000;
 let vmsPollTimer = null;
 let currentAccountUserId = null;
@@ -508,10 +526,6 @@ function stopVmsPolling() {
   }
 }
 
-// `showLoadingState` controla si se muestra "Cargando servidores..." y se
-// oculta la tabla mientras se pide el dato. En la carga inicial sí queremos
-// eso; en los refrescos automáticos cada 10s o al pulsar "Recargar" no,
-// para que la tabla no parpadee/desaparezca si ya había datos.
 async function loadVms(userId, { showLoadingState = true } = {}) {
   const loading = document.getElementById("vms-loading");
   const empty = document.getElementById("vms-empty");
@@ -526,7 +540,7 @@ async function loadVms(userId, { showLoadingState = true } = {}) {
 
   let { data: vms, error } = await supabase
     .from("vms")
-    .select("id, proxmox_vmid, proxmox_node, plan, os, status, status_message, created_at")
+    .select("id, proxmox_vmid, proxmox_node, plan, os, status, status_message, created_at, initial_username")
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
 
@@ -545,9 +559,6 @@ async function loadVms(userId, { showLoadingState = true } = {}) {
     return;
   }
 
-  // Sincroniza el estado real de cada VM contra Proxmox antes de pintar la
-  // tabla, en vez de fiarnos a ciegas de lo último que quedó guardado en
-  // la DB (que puede estar desactualizado).
   vms = await refreshVmsStatusesFromProxmox(vms);
 
   empty.style.display = "none";
@@ -582,7 +593,7 @@ async function loadVms(userId, { showLoadingState = true } = {}) {
         <span class="plan-badge plan-${vm.plan}">${vm.plan}</span>
       </td>
     `;
-
+	
     tr.addEventListener("click", (e) => {
       if (e.target.closest(".vm-copy-btn")) return;
       openVmPanel(vm, displayName);
@@ -609,38 +620,29 @@ async function loadVms(userId, { showLoadingState = true } = {}) {
 }
 
 /* ============ PANEL DE GESTIÓN DE VM ============ */
-let currentVmId = null;        // id (uuid) de Supabase
-let currentProxmoxVmid = null; // vmid numérico de Proxmox
-let currentProxmoxNode = null; // node1 o node2
-let currentRfb = null;         // instancia activa de noVNC RFB
-let consoleConnected = false;  // true mientras la consola noVNC está realmente conectada
+let currentVmId = null;        
+let currentProxmoxVmid = null; 
+let currentProxmoxNode = null; 
+let currentRfb = null;         
+let consoleConnected = false;  
 
-// Control de reconexión automática de la consola.
 const RECONNECT_SECONDS = 30;
-let consoleSessionId = 0;        // se incrementa cada vez que se abre/cierra el panel,
-                                   // para ignorar reconexiones "viejas" que ya no aplican.
-let reconnectCountdownTimer = null; // setInterval del contador visible
+let consoleSessionId = 0;        
+                                   
+let reconnectCountdownTimer = null; 
 let reconnectSecondsLeft = 0;
 
-// Reintentos de conexión tras Encender / Reiniciar: en vez de disparar
-// intentos en paralelo (lo que causaba parpadeos y comportamiento raro),
-// cada intento se espera por completo (con un tope de tiempo) antes de
-// lanzar el siguiente, dejando una pequeña pausa entre uno y otro.
-const RECONNECT_ATTEMPT_TIMEOUT_MS = 1000; // cuánto esperamos cada intento antes de darlo por fallido
-const RECONNECT_RETRY_GAP_MS = 300;        // pausa entre un intento fallido y el siguiente
-const REBOOT_RECONNECT_INITIAL_MS = 5800;  // primer intento tras reiniciar: 5.8s
-const REBOOT_RECONNECT_MAX_MS = 20000;     // límite total tras reiniciar: 20s
-const START_RECONNECT_INITIAL_MS = 2000;   // primer intento tras encender: 2s
-const START_RECONNECT_MAX_MS = 15000;      // límite total tras encender: 15s
+const RECONNECT_ATTEMPT_TIMEOUT_MS = 1000; 
+const RECONNECT_RETRY_GAP_MS = 300;        
+const REBOOT_RECONNECT_INITIAL_MS = 5800;  
+const REBOOT_RECONNECT_MAX_MS = 20000;     
+const START_RECONNECT_INITIAL_MS = 2000;   
+const START_RECONNECT_MAX_MS = 15000;      
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Mientras el panel de una VM está abierto, comprobamos su estado real cada
-// STATUS_POLL_MS. Así detectamos que se apagó/encendió/reinició aunque haya
-// pasado por fuera de este panel (apagado desde dentro del SO, fallo de un
-// comando, etc.), sin que el usuario tenga que cerrar y reabrir el panel.
 const STATUS_POLL_MS = 1000;
 let statusPollTimer = null;
 
@@ -678,13 +680,11 @@ function openVmPanel(vm, displayName) {
 
   document.getElementById("vm-action-feedback").textContent = "";
 
-  // Estado actual (ya lo tenemos en memoria, sin llamada extra)
   const statusInfo = getStatusInfo(vm.status);
   const statusEl = document.getElementById("vm-panel-status");
   statusEl.textContent = statusInfo.label;
   statusEl.className = `status-badge ${statusInfo.class}`;
 
-  // Specs fijas según el plan
   const specs = PLAN_SPECS[vm.plan] || {};
   document.getElementById("vm-spec-plan").textContent = capitalize(vm.plan);
   document.getElementById("vm-spec-cpu").textContent = specs.cpu || "—";
@@ -692,29 +692,63 @@ function openVmPanel(vm, displayName) {
   document.getElementById("vm-spec-disk").textContent = specs.disk || "—";
   document.getElementById("vm-spec-os").textContent = capitalize(vm.os) || "—";
 
-  // Nueva sesión de consola: invalida cualquier reconexión pendiente de un
-  // panel anterior y arranca de cero.
+  /* CAMBIO 3a — Rellenar el usuario inicial y resetear credenciales UI */
+  document.getElementById("vm-cred-username").textContent = vm.initial_username || "—";
+  resetCredentialsUI();
+
   consoleSessionId++;
   clearReconnectCountdown();
   setConsoleLoadingMessage("Conectando con la consola...");
   connectConsole(currentProxmoxVmid, currentProxmoxNode, consoleSessionId);
 
-  // El status.label de arriba viene de la DB, que puede estar desactualizado
-  // (por ejemplo, si apagaste la VM desde dentro del sistema operativo).
-  // Mientras tanto mostramos los botones según ese dato de partida, pero
-  // preguntamos a Proxmox el estado real ahora mismo para corregirlo.
   applyPowerButtonsForStatus(vm.status);
   lastKnownVmStatus = vm.status;
   refreshVmStatus(currentProxmoxVmid, currentProxmoxNode, consoleSessionId);
   startStatusPolling(currentProxmoxVmid, currentProxmoxNode, consoleSessionId);
 }
 
+/* CAMBIO 3b — Funciones y lógica para pedir/mostrar/copiar la contraseña */
+let credentialsRevealed = false;
+let credentialsCache = null; 
+
+function resetCredentialsUI() {
+  credentialsRevealed = false;
+  credentialsCache = null;
+  document.getElementById("vm-cred-password").textContent = "••••••••";
+  document.getElementById("vm-cred-copy-btn").style.display = "none";
+  document.getElementById("vm-cred-feedback").textContent = "";
+  const toggleBtn = document.getElementById("vm-cred-toggle-btn");
+  toggleBtn.title = "Mostrar contraseña";
+  toggleBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>`;
+}
+
+async function fetchVmCredentials(vmId) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData?.session?.access_token;
+
+  const res = await fetch(
+    `${SUPABASE_URL}/functions/v1/vm-credentials`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + accessToken,
+      },
+      body: JSON.stringify({ vm_id: vmId }),
+    }
+  );
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error obteniendo credenciales");
+  return data;
+}
+
 function closeVmPanel() {
   document.getElementById("vm-panel-overlay").style.display = "none";
 
-  // Invalida la sesión de consola actual: cualquier reconexión programada
-  // o en curso para esta sesión se ignorará al llegar (ver checks de
-  // consoleSessionId más abajo).
   consoleSessionId++;
   clearReconnectCountdown();
   stopStatusPolling();
@@ -724,10 +758,12 @@ function closeVmPanel() {
     try {
       currentRfb.disconnect();
     } catch (err) {
-      // ignoramos errores al desconectar, el panel se está cerrando igualmente
     }
     currentRfb = null;
   }
+
+  /* CAMBIO 3d — Limpiar credenciales al cerrar */
+  resetCredentialsUI();
 
   currentVmId = null;
   currentProxmoxVmid = null;
@@ -739,18 +775,8 @@ document.getElementById("vm-panel-overlay").addEventListener("click", (e) => {
   if (e.target.id === "vm-panel-overlay") closeVmPanel();
 });
 
-// Último estado real conocido de la VM del panel abierto. Lo usamos para
-// poder "devolver" los botones a su estado correcto después de una acción,
-// en vez de reactivarlos todos a ciegas.
 let lastKnownVmStatus = null;
 
-// Deja visibles los tres botones siempre, pero atenúa (opacidad + sin click)
-// el/los que no tengan sentido para el estado real de la VM: Encender solo
-// tiene efecto si está apagada; Apagar y Reiniciar solo si está encendida.
-// Si el estado es desconocido (no se pudo comprobar, o es un estado
-// intermedio tipo "provisioning"), dejamos los tres activos para no
-// bloquear al usuario, ya que no podemos saber con certeza qué acción tiene
-// sentido.
 function setPowerButtonEnabled(btn, enabled) {
   btn.disabled = !enabled;
   btn.style.opacity = enabled ? "1" : "0.4";
@@ -779,11 +805,6 @@ function applyPowerButtonsForStatus(status) {
   }
 }
 
-// Pregunta a Proxmox el estado REAL de la VM (no el de la DB) a través de
-// swift-api (action: "status"), actualiza el badge de estado, los botones
-// visibles, y de paso swift-api sincroniza la fila en la DB. Si el usuario
-// cerró el panel o cambió de VM mientras esperábamos la respuesta, se
-// ignora el resultado (comprobación de sessionId).
 async function refreshVmStatus(vmid, node, sessionId) {
   try {
     const { data, error } = await supabase.functions.invoke("swift-api", {
@@ -793,8 +814,6 @@ async function refreshVmStatus(vmid, node, sessionId) {
     if (sessionId !== consoleSessionId) return null;
 
     if (error || !data?.status) {
-      // No se pudo comprobar: dejamos los tres botones visibles en vez de
-      // arriesgarnos a ocultar el que hiciera falta.
       applyPowerButtonsForStatus(null);
       return null;
     }
@@ -820,17 +839,33 @@ function clearReconnectCountdown() {
   }
 }
 
-// Pinta el estado "conectando..." simple, sin botón de reintento (se usa
-// mientras hay un intento de conexión en curso).
 function setConsoleLoadingMessage(text) {
   const loadingEl = document.getElementById("vm-console-loading");
-  loadingEl.style.display = "flex";
+  loadingEl.styl--text);
+      text-align: left;
+    }
+    .os-option img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .os-option:hover {
+      background: var(--surface);
+    }
+    .os-option.selected {
+      border-color: var(--accent);
+      background: #eff6ff;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* CAMBIO 2 e.display = "flex";
   loadingEl.textContent = text;
   document.getElementById("vm-console-canvas").style.display = "none";
 }
 
-// Pinta el estado "desconectada" con contador de reintento automático y
-// botón para reintentar ahora mismo.
 function setConsoleDisconnectedMessage(baseText, proxmoxVmid, node, sessionId) {
   const loadingEl = document.getElementById("vm-console-loading");
   document.getElementById("vm-console-canvas").style.display = "none";
@@ -853,7 +888,6 @@ function setConsoleDisconnectedMessage(baseText, proxmoxVmid, node, sessionId) {
     connectConsole(proxmoxVmid, node, sessionId);
   });
 
-  // Contador de 30s -> reconexión automática si el usuario no le da al botón.
   reconnectSecondsLeft = RECONNECT_SECONDS;
   const countdownEl = document.getElementById("vm-console-countdown");
   countdownEl.textContent = `Reintentando automáticamente en ${reconnectSecondsLeft}s...`;
@@ -875,14 +909,6 @@ function setConsoleDisconnectedMessage(baseText, proxmoxVmid, node, sessionId) {
   }, 1000);
 }
 
-// Programa reintentos automáticos de conexión a la consola: el primer
-// intento se lanza a los `initialDelayMs`. Si falla, se espera a que ese
-// intento termine del todo (o pase su propio tope de tiempo) y solo
-// entonces se prueba otra vez, tras una pequeña pausa. Así nunca hay dos
-// intentos a la vez, que era lo que causaba parpadeos y comportamiento
-// errático. Sigue así hasta conectar o hasta que pasen `maxTotalMs` desde
-// el momento en que se llamó a esta función (justo tras pulsar
-// Encender/Reiniciar).
 async function scheduleConsoleReconnectLoop(vmid, node, sessionId, initialDelayMs, maxTotalMs) {
   clearReconnectCountdown();
   setConsoleLoadingMessage("Conectando con la consola...");
@@ -892,9 +918,9 @@ async function scheduleConsoleReconnectLoop(vmid, node, sessionId, initialDelayM
   await sleep(initialDelayMs);
 
   while (true) {
-    if (sessionId !== consoleSessionId) return; // el panel ya no es este
-    if (consoleConnected) return;               // ya conectó, terminamos
-    if (Date.now() >= deadline) break;           // se acabó el tiempo máximo
+    if (sessionId !== consoleSessionId) return; 
+    if (consoleConnected) return;               
+    if (Date.now() >= deadline) break;           
 
     const connected = await attemptConsoleConnectOnce(vmid, node, sessionId);
 
@@ -906,18 +932,10 @@ async function scheduleConsoleReconnectLoop(vmid, node, sessionId, initialDelayM
   }
 
   if (sessionId === consoleSessionId && !consoleConnected) {
-    // Se acabó el tiempo máximo sin conectar: aquí sí mostramos el mensaje
-    // de desconexión con su contador de reintento (30s) y botón de
-    // "Reintentar ahora".
     setConsoleDisconnectedMessage("No se pudo conectar con la consola.", vmid, node, sessionId);
   }
 }
 
-// Hace un único intento de conexión en segundo plano (sin logs ni cambios
-// visibles de mensaje/contador mientras falla) y devuelve una promesa que
-// resuelve a `true` si conectó o `false` si falló o se agotó su propio
-// tiempo de espera (RECONNECT_ATTEMPT_TIMEOUT_MS). Nunca deja el intento
-// "colgado": siempre resuelve, así el bucle de arriba puede avanzar.
 function attemptConsoleConnectOnce(proxmoxVmid, node, sessionId) {
   return new Promise((resolve) => {
     let settled = false;
@@ -944,9 +962,6 @@ function attemptConsoleConnectOnce(proxmoxVmid, node, sessionId) {
         if (error || !data?.ticket) { clearTimeout(timeoutId); finish(false); return; }
 
         const { port, ticket } = data;
-        // Conectamos a nuestro relay (no directamente a Proxmox), porque el
-        // navegador no puede mandar la cabecera de autenticación que Proxmox
-        // exige. El relay se encarga de eso y retransmite los bytes.
         const RELAY_HOST = "hfk09ca2rr0.sn.mynetname.net:8443";
         const wsUrl =
           `wss://${RELAY_HOST}/` +
@@ -975,9 +990,6 @@ function attemptConsoleConnectOnce(proxmoxVmid, node, sessionId) {
           document.getElementById("vm-console-loading").style.display = "none";
           canvasEl.style.display = "block";
 
-          // A partir de aquí ya es la conexión real (no un intento de
-          // fondo): si se cae más adelante, sí queremos loguear y mostrar
-          // el mensaje con contador de reintento.
           rfb.addEventListener("disconnect", (e) => {
             if (sessionId !== consoleSessionId) return;
             consoleConnected = false;
@@ -991,8 +1003,6 @@ function attemptConsoleConnectOnce(proxmoxVmid, node, sessionId) {
           finish(true);
         });
 
-        // Este listener solo importa si el intento falla ANTES de conectar
-        // (la conexión real ya tiene su propio listener añadido arriba).
         rfb.addEventListener("disconnect", () => {
           clearTimeout(timeoutId);
           finish(false);
@@ -1018,8 +1028,6 @@ function attemptConsoleConnectOnce(proxmoxVmid, node, sessionId) {
 async function connectConsole(proxmoxVmid, node, sessionId) {
   const canvasEl = document.getElementById("vm-console-canvas");
 
-  // Si mientras pedíamos el ticket el usuario cerró el panel o abrió otra
-  // VM, esta sesión ya no es la actual: no seguimos.
   if (sessionId !== consoleSessionId) return;
 
   consoleConnected = false;
@@ -1037,9 +1045,6 @@ async function connectConsole(proxmoxVmid, node, sessionId) {
     }
 
     const { port, ticket } = data;
-    // Conectamos a nuestro relay (no directamente a Proxmox), porque el
-    // navegador no puede mandar la cabecera de autenticación que Proxmox exige.
-    // El relay se encarga de eso y retransmite los bytes.
     const RELAY_HOST = "hfk09ca2rr0.sn.mynetname.net:8443";
     const wsUrl =
       `wss://${RELAY_HOST}/` +
@@ -1050,8 +1055,6 @@ async function connectConsole(proxmoxVmid, node, sessionId) {
 
     console.log("[vnc] conectando a", wsUrl);
 
-    // Si había una conexión anterior de esta misma sesión, la limpiamos antes
-    // de crear una nueva (por si acaso).
     if (currentRfb) {
       try { currentRfb.disconnect(); } catch (err) {}
       currentRfb = null;
@@ -1106,9 +1109,6 @@ async function connectConsole(proxmoxVmid, node, sessionId) {
   }
 }
 
-// Tras un encendido/apagado, cuánto esperar antes de volver a comprobar el
-// estado real (para refrescar badge y botones sin que el usuario tenga que
-// cerrar y reabrir el panel).
 const POWER_STATUS_REFRESH_MS = 5000;
 
 const POWER_ACTION_MESSAGES = {
@@ -1118,9 +1118,27 @@ const POWER_ACTION_MESSAGES = {
 };
 const POWER_ACTION_ERROR = "No se pudo completar la acción. Inténtalo de nuevo.";
 
-// Deshabilita/habilita los tres botones sin alterar cuál debería estar
-// atenuado por el estado real de la VM (eso lo decide applyPowerButtonsForStatus).
-function setAllPowerButtonsDisabled(disabled) {
+functio--text);
+      text-align: left;
+    }
+    .os-option img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .os-option:hover {
+      background: var(--surface);
+    }
+    .os-option.selected {
+      border-color: var(--accent);
+      background: #eff6ff;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* CAMBIO 2 n setAllPowerButtonsDisabled(disabled) {
   document.querySelectorAll(".vm-power-btn").forEach(b => { b.disabled = disabled; });
 }
 
@@ -1131,10 +1149,6 @@ document.querySelectorAll(".vm-power-btn").forEach(btn => {
     const feedback = document.getElementById("vm-action-feedback");
     const messages = POWER_ACTION_MESSAGES[action] || { sending: "Enviando solicitud…", done: "Solicitud enviada." };
 
-    // Capturamos estos valores en el momento del click: si el usuario cierra
-    // el panel o cambia de VM antes de que pase el tiempo de espera, el check
-    // de sessionId más abajo evita que la reconexión/comprobación programada
-    // actúe sobre el panel equivocado.
     const targetVmid = currentProxmoxVmid;
     const targetNode = currentProxmoxNode;
     const targetSessionId = consoleSessionId;
@@ -1155,7 +1169,7 @@ document.querySelectorAll(".vm-power-btn").forEach(btn => {
         scheduleConsoleReconnectLoop(targetVmid, targetNode, targetSessionId, REBOOT_RECONNECT_INITIAL_MS, REBOOT_RECONNECT_MAX_MS);
 
         setTimeout(() => {
-          if (targetSessionId !== consoleSessionId) return; // el panel ya no es este
+          if (targetSessionId !== consoleSessionId) return; 
           refreshVmStatus(targetVmid, targetNode, targetSessionId);
         }, REBOOT_RECONNECT_INITIAL_MS);
       } else if (action === "start") {
@@ -1178,12 +1192,63 @@ document.querySelectorAll(".vm-power-btn").forEach(btn => {
     } catch (err) {
       feedback.textContent = POWER_ACTION_ERROR;
     } finally {
-      // No reactivamos los tres a ciegas: respetamos el último estado real
-      // conocido (por ejemplo, si está "running", Encender debe seguir
-      // atenuado aunque acabemos de terminar una llamada).
       applyPowerButtonsForStatus(lastKnownVmStatus);
     }
   });
+});
+
+/* CAMBIO 3b (Continuación) — Listeners para el toggle y copia de credenciales */
+document.getElementById("vm-cred-toggle-btn").addEventListener("click", async () => {
+  const feedback = document.getElementById("vm-cred-feedback");
+  const passwordEl = document.getElementById("vm-cred-password");
+  const toggleBtn = document.getElementById("vm-cred-toggle-btn");
+  const copyBtn = document.getElementById("vm-cred-copy-btn");
+
+  if (credentialsRevealed) {
+    credentialsRevealed = false;
+    passwordEl.textContent = "••••••••";
+    copyBtn.style.display = "none";
+    toggleBtn.title = "Mostrar contraseña";
+    toggleBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>`;
+    return;
+  }
+
+  if (!currentVmId) return;
+
+  toggleBtn.disabled = true;
+  feedback.textContent = "";
+
+  try {
+    if (!credentialsCache) {
+      credentialsCache = await fetchVmCredentials(currentVmId);
+    }
+    passwordEl.textContent = credentialsCache.password;
+    copyBtn.style.display = "inline-flex";
+    credentialsRevealed = true;
+    toggleBtn.title = "Ocultar contraseña";
+    toggleBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+        <line x1="1" y1="1" x2="23" y2="23"/>
+      </svg>`;
+  } catch (err) {
+    feedback.textContent = "No se pudo obtener la contraseña. Inténtalo de nuevo.";
+  } finally {
+    toggleBtn.disabled = false;
+  }
+});
+
+document.getElementById("vm-cred-copy-btn").addEventListener("click", async () => {
+  if (!credentialsCache) return;
+  await navigator.clipboard.writeText(credentialsCache.password);
+  const btn = document.getElementById("vm-cred-copy-btn");
+  const original = btn.innerHTML;
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>`;
+  setTimeout(() => { btn.innerHTML = original; }, 1200);
 });
 
 /* ============ SELECTOR DE SO CON LOGOS (comprar VM) ============ */
@@ -1227,7 +1292,6 @@ document.querySelectorAll("[data-buy-plan]").forEach(btn => {
       const accessToken = sessionData?.session?.access_token;
 
       if (!accessToken) {
-        // por si la sesión expiró justo en este momento
         closeBuyModal();
         openAuthModal();
         return;
@@ -1304,8 +1368,6 @@ async function loadAccountContent() {
   startVmsPolling(user.id);
 }
 
-// Botón "Recargar" de la tabla de servidores: fuerza una recarga inmediata
-// sin esperar al ciclo de 10s, sin hacer parpadear la tabla.
 document.getElementById("vms-reload-btn").addEventListener("click", async () => {
   if (!currentAccountUserId) return;
   const btn = document.getElementById("vms-reload-btn");
