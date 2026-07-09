@@ -257,32 +257,41 @@
             <span id="vm-spec-os" class="vm-spec-value">—</span>
           </div>
         </div>
-        <div class="vm-specs-block" id="vm-credentials-block" style="margin-top:14px;">
+    <div class="vm-access-block">
+  <h4>Acceso</h4>
+
+  <div class="vm-spec-row">
+    <span class="vm-spec-label">IP</span>
+    <div class="vm-access-value">
+      <span id="vm-ip">—</span>
+      <button class="vm-copy-btn" id="copy-ip">📋</button>
+    </div>
+  </div>
+
   <div class="vm-spec-row">
     <span class="vm-spec-label">Usuario</span>
-    <span id="vm-cred-username" class="vm-spec-value">—</span>
+    <div class="vm-access-value">
+      <span id="vm-username">—</span>
+      <button class="vm-copy-btn" id="copy-user">📋</button>
+    </div>
   </div>
+
   <div class="vm-spec-row">
     <span class="vm-spec-label">Contraseña</span>
-    <span style="display:flex; align-items:center; gap:6px;">
-      <span id="vm-cred-password" class="vm-spec-value" style="letter-spacing:2px;">••••••••</span>
-      <button id="vm-cred-toggle" title="Mostrar/ocultar contraseña" aria-label="Mostrar contraseña"
-        style="background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;display:flex;">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>
-        </svg>
-      </button>
-      <button id="vm-cred-copy" title="Copiar contraseña" aria-label="Copiar contraseña"
-        style="background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;display:flex;">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/>
-        </svg>
-      </button>
-    </span>
-  </div>
-  <p id="vm-cred-feedback" style="margin:6px 0 0 0; font-size:12px; color: var(--muted);"></p>
-</div>
+    <div class="vm-access-value">
+      <span id="vm-password">••••••••••</span>
 
+      <button id="show-password">
+        👁
+      </button>
+
+      <button id="copy-password">
+        📋
+      </button>
+    </div>
+  </div>
+</div>
+        
         <div class="vm-power-actions">
           <button class="vm-power-btn vm-btn-start" data-action="start">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -717,9 +726,6 @@ function openVmPanel(vm, displayName) {
   document.getElementById("vm-spec-disk").textContent = specs.disk || "—";
   document.getElementById("vm-spec-os").textContent = capitalize(vm.os) || "—";
 
-  resetCredentialsUI();
-  loadVmCredentials(vm.id, consoleSessionId);
-
   // Nueva sesión de consola: invalida cualquier reconexión pendiente de un
   // panel anterior y arranca de cero.
   consoleSessionId++;
@@ -760,12 +766,8 @@ function closeVmPanel() {
   currentVmId = null;
   currentProxmoxVmid = null;
   currentProxmoxNode = null;
-  resetCredentialsUI();
-
 }
 
-  
-  
 document.getElementById("vm-panel-close").addEventListener("click", closeVmPanel);
 document.getElementById("vm-panel-overlay").addEventListener("click", (e) => {
   if (e.target.id === "vm-panel-overlay") closeVmPanel();
@@ -775,8 +777,8 @@ document.getElementById("vm-panel-overlay").addEventListener("click", (e) => {
 // poder "devolver" los botones a su estado correcto después de una acción,
 // en vez de reactivarlos todos a ciegas.
 let lastKnownVmStatus = null;
-let currentCredentials = null; // {username, password, ip_address}
-let credentialsVisible = false;
+let vmCredentials = null;
+let passwordVisible = false;
 // Deja visibles los tres botones siempre, pero atenúa (opacidad + sin click)
 // el/los que no tengan sentido para el estado real de la VM: Encender solo
 // tiene efecto si está apagada; Apagar y Reiniciar solo si está encendida.
@@ -831,112 +833,7 @@ async function refreshVmStatus(vmid, node, sessionId) {
       applyPowerButtonsForStatus(null);
       return null;
     }
-    
-function resetCredentialsUI() {async function refreshVmStatus(...)
 
-empieza en la línea 812.
-
-Pega todo este bloque justo después de que termine esa función, antes de que empiece clearReconnectCountdown().
-
-Es decir:
-
-812  async function refreshVmStatus(...)
-...
-(fin de refreshVmStatus)
-
-⬇️ AQUÍ PEGAR
-
-function resetCredentialsUI() { ... }
-
-async function loadVmCredentials(...) { ... }
-
-document.getElementById("vm-cred-toggle")...
-
-document.getElementById("vm-cred-copy")...
-
-⬇️ DESPUÉS SIGUE
-
-function clearReconnectCountdown() {
-
-3. Dentro de openVmPanel(vm, displayName)
-
-La función empieza en la línea 690.
-
-Busca este bloque:
-
-document.getElementById("vm-spec-plan").textContent = capitalize(vm.plan);
-document.getElementById("vm-spec-cpu").textContent = specs.cpu || "—";
-document.getElementById("vm-spec-ram").textContent = specs.ram || "—";
-document.getElementById("vm-spec-disk").textContent = specs.disk || "—";
-document.getElementById("vm-spec-os").textContent = capitalize(vm.os) || "—";
-
-Justo debajo añade:
-
-resetCredentialsUI();
-loadVmCredentials(vm.id, consoleSessionId);
-
-4. Dentro de closeVmPanel()
-
-La función empieza en la línea 737.
-
-Busca el principio:
-
-function closeVmPanel() {
-  document.getElementById("vm-panel-overlay").style.display = "none";
-
-Justo debajo añade:
-
-resetCredentialsUI();
-
-Con esos cuatro cambios queda integrado correctamente en el archivo que me has pasado.
-
-
-
-  currentCredentials = null;
-  credentialsVisible = false;
-  document.getElementById("vm-cred-username").textContent = "—";
-  document.getElementById("vm-cred-password").textContent = "••••••••";
-  document.getElementById("vm-cred-feedback").textContent = "";
-}
-
-async function loadVmCredentials(vmId, sessionId) {
-  const feedback = document.getElementById("vm-cred-feedback");
-  try {
-    const { data, error } = await supabase.functions.invoke("vm-credentials", {
-      body: { vm_id: vmId },
-    });
-
-    if (sessionId !== consoleSessionId) return; // el panel ya cambió, ignoramos
-
-    if (error || !data || data.error) {
-      feedback.textContent = "No se pudieron cargar las credenciales.";
-      return;
-    }
-
-    currentCredentials = data;
-    document.getElementById("vm-cred-username").textContent = data.username || "—";
-  } catch (err) {
-    if (sessionId !== consoleSessionId) return;
-    feedback.textContent = "No se pudieron cargar las credenciales.";
-  }
-}
-
-document.getElementById("vm-cred-toggle").addEventListener("click", () => {
-  if (!currentCredentials) return;
-  credentialsVisible = !credentialsVisible;
-  document.getElementById("vm-cred-password").textContent =
-    credentialsVisible ? currentCredentials.password : "••••••••";
-});
-
-document.getElementById("vm-cred-copy").addEventListener("click", async () => {
-  if (!currentCredentials) return;
-  await navigator.clipboard.writeText(currentCredentials.password);
-  const btn = document.getElementById("vm-cred-copy");
-  const original = btn.innerHTML;
-  btn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>`;
-  setTimeout(() => { btn.innerHTML = original; }, 1200);
-});
-    
     const statusInfo = getStatusInfo(data.status);
     const statusEl = document.getElementById("vm-panel-status");
     statusEl.textContent = statusInfo.label;
@@ -951,6 +848,26 @@ document.getElementById("vm-cred-copy").addEventListener("click", async () => {
   }
 }
 
+async function loadVmCredentials(vmId) {
+    if (vmCredentials) return vmCredentials;
+
+    const { data, error } = await supabase.functions.invoke(
+        "vm-credentials",
+        {
+            body: { vm_id: vmId }
+        }
+    );
+
+    if (error) throw error;
+
+    vmCredentials = data;
+
+    document.getElementById("vm-ip").textContent = data.ip_address ?? "—";
+    document.getElementById("vm-username").textContent = data.username ?? "—";
+
+    return data;
+}
+  
 function clearReconnectCountdown() {
   if (reconnectCountdownTimer) {
     clearInterval(reconnectCountdownTimer);
