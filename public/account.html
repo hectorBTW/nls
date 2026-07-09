@@ -257,6 +257,31 @@
             <span id="vm-spec-os" class="vm-spec-value">—</span>
           </div>
         </div>
+        <div class="vm-specs-block" id="vm-credentials-block" style="margin-top:14px;">
+  <div class="vm-spec-row">
+    <span class="vm-spec-label">Usuario</span>
+    <span id="vm-cred-username" class="vm-spec-value">—</span>
+  </div>
+  <div class="vm-spec-row">
+    <span class="vm-spec-label">Contraseña</span>
+    <span style="display:flex; align-items:center; gap:6px;">
+      <span id="vm-cred-password" class="vm-spec-value" style="letter-spacing:2px;">••••••••</span>
+      <button id="vm-cred-toggle" title="Mostrar/ocultar contraseña" aria-label="Mostrar contraseña"
+        style="background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;display:flex;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+      <button id="vm-cred-copy" title="Copiar contraseña" aria-label="Copiar contraseña"
+        style="background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;display:flex;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/>
+        </svg>
+      </button>
+    </span>
+  </div>
+  <p id="vm-cred-feedback" style="margin:6px 0 0 0; font-size:12px; color: var(--muted);"></p>
+</div>
 
         <div class="vm-power-actions">
           <button class="vm-power-btn vm-btn-start" data-action="start">
