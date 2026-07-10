@@ -42,30 +42,6 @@
       color: var(--accent);
       font-weight: 600;
     }
-    .vm-access-block {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: white;
-    }
-    .vm-access-title {
-      margin: 0 0 4px 0;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
-    }
-    .vm-access-value-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .vm-access-value-row .vm-spec-value {
-      font-family: 'SF Mono', Consolas, monospace;
-      font-size: 12px;
-    }
   </style>
 </head>
 <body>
@@ -282,29 +258,29 @@
           </div>
         </div>
 
-        <div class="vm-access-block">
-          <p class="vm-access-title">Acceso</p>
+        <div class="vm-specs-block" style="margin-top:12px;">
           <div class="vm-spec-row">
             <span class="vm-spec-label">Usuario</span>
-            <div class="vm-access-value-row">
-              <span id="vm-access-username" class="vm-spec-value">—</span>
-              <button type="button" class="vm-copy-btn" id="vm-access-copy-user" title="Copiar usuario" aria-label="Copiar usuario">
+            <span style="display:flex; align-items:center; gap:6px;">
+              <span id="vm-cred-username" class="vm-spec-value">—</span>
+              <button id="vm-cred-copy-user-btn" class="vm-copy-btn" title="Copiar usuario" aria-label="Copiar usuario" type="button" style="display:none;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>
               </button>
-            </div>
+            </span>
           </div>
           <div class="vm-spec-row">
             <span class="vm-spec-label">Contraseña</span>
-            <div class="vm-access-value-row">
-              <span id="vm-access-password" class="vm-spec-value">••••••••••</span>
-              <button type="button" class="vm-copy-btn" id="vm-access-toggle-password" title="Mostrar contraseña" aria-label="Mostrar contraseña">
+            <span style="display:flex; align-items:center; gap:6px;">
+              <span id="vm-cred-password" class="vm-spec-value">••••••••</span>
+              <button id="vm-cred-toggle-btn" class="vm-copy-btn" title="Mostrar contraseña" aria-label="Mostrar contraseña" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
-              <button type="button" class="vm-copy-btn" id="vm-access-copy-password" title="Copiar contraseña" aria-label="Copiar contraseña">
+              <button id="vm-cred-copy-pass-btn" class="vm-copy-btn" title="Copiar contraseña" aria-label="Copiar contraseña" type="button" style="display:none;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>
               </button>
-            </div>
+            </span>
           </div>
+          <p id="vm-cred-feedback" style="margin:6px 0 0 0; font-size:12px; color:var(--muted);"></p>
         </div>
 
         <div class="vm-power-actions">
@@ -657,83 +633,6 @@ async function loadVms(userId, { showLoadingState = true } = {}) {
   if (summaryEl) summaryEl.textContent = vms.length;
 }
 
-/* ============ CREDENCIALES DE VM (ACCESO) ============ */
-const PASSWORD_MASK = "••••••••••";
-const SVG_COPY = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>`;
-const SVG_CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>`;
-const SVG_EYE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
-const SVG_EYE_OFF = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
-
-let vmCredentialsUsername = "";
-let vmCredentialsPassword = "";
-let vmPasswordVisible = false;
-
-function resetVmCredentialsUI() {
-  vmCredentialsUsername = "";
-  vmCredentialsPassword = "";
-  vmPasswordVisible = false;
-  document.getElementById("vm-access-username").textContent = "—";
-  document.getElementById("vm-access-password").textContent = PASSWORD_MASK;
-  const toggleBtn = document.getElementById("vm-access-toggle-password");
-  toggleBtn.innerHTML = SVG_EYE;
-  toggleBtn.title = "Mostrar contraseña";
-  toggleBtn.setAttribute("aria-label", "Mostrar contraseña");
-}
-
-function updatePasswordDisplay() {
-  document.getElementById("vm-access-password").textContent =
-    vmPasswordVisible ? vmCredentialsPassword : PASSWORD_MASK;
-}
-
-async function copyWithFeedback(btn, text) {
-  if (!text) return;
-  await navigator.clipboard.writeText(text);
-  const original = btn.innerHTML;
-  btn.innerHTML = SVG_CHECK;
-  setTimeout(() => { btn.innerHTML = original; }, 1200);
-}
-
-async function loadVmCredentials(vmId) {
-  resetVmCredentialsUI();
-  document.getElementById("vm-access-username").textContent = "Cargando...";
-
-  try {
-    const { data, error } = await supabase.functions.invoke("vm-credentials", {
-      body: { vm_id: vmId },
-    });
-
-    if (error || !data) {
-      document.getElementById("vm-access-username").textContent = "—";
-      return;
-    }
-
-    vmCredentialsUsername = data.username || "—";
-    vmCredentialsPassword = data.password || "";
-    document.getElementById("vm-access-username").textContent = vmCredentialsUsername;
-    updatePasswordDisplay();
-  } catch (err) {
-    document.getElementById("vm-access-username").textContent = "—";
-  }
-}
-
-document.getElementById("vm-access-copy-user").addEventListener("click", async () => {
-  await copyWithFeedback(document.getElementById("vm-access-copy-user"), vmCredentialsUsername);
-});
-
-document.getElementById("vm-access-toggle-password").addEventListener("click", () => {
-  if (!vmCredentialsPassword) return;
-  vmPasswordVisible = !vmPasswordVisible;
-  updatePasswordDisplay();
-  const toggleBtn = document.getElementById("vm-access-toggle-password");
-  toggleBtn.innerHTML = vmPasswordVisible ? SVG_EYE_OFF : SVG_EYE;
-  toggleBtn.title = vmPasswordVisible ? "Ocultar contraseña" : "Mostrar contraseña";
-  toggleBtn.setAttribute("aria-label", toggleBtn.title);
-});
-
-document.getElementById("vm-access-copy-password").addEventListener("click", async () => {
-  await copyWithFeedback(document.getElementById("vm-access-copy-password"), vmCredentialsPassword);
-});
-
 /* ============ PANEL DE GESTIÓN DE VM ============ */
 let currentVmId = null;        // id (uuid) de Supabase
 let currentProxmoxVmid = null; // vmid numérico de Proxmox
@@ -804,6 +703,17 @@ function openVmPanel(vm, displayName) {
 
   document.getElementById("vm-action-feedback").textContent = "";
 
+  // Reset del bloque de credenciales: cada VM tiene las suyas, así que no
+  // arrastramos lo que se mostró para la VM anterior, y hay que volver a
+  // pulsar "mostrar" (lo que dispara una nueva llamada a la edge function).
+  vmCredentialsLoaded = null;
+  document.getElementById("vm-cred-username").textContent = "—";
+  document.getElementById("vm-cred-password").textContent = "••••••••";
+  document.getElementById("vm-cred-feedback").textContent = "";
+  document.getElementById("vm-cred-copy-user-btn").style.display = "none";
+  document.getElementById("vm-cred-copy-pass-btn").style.display = "none";
+  setCredToggleIcon(false);
+
   // Estado actual (ya lo tenemos en memoria, sin llamada extra)
   const statusInfo = getStatusInfo(vm.status);
   const statusEl = document.getElementById("vm-panel-status");
@@ -817,8 +727,6 @@ function openVmPanel(vm, displayName) {
   document.getElementById("vm-spec-ram").textContent = specs.ram || "—";
   document.getElementById("vm-spec-disk").textContent = specs.disk || "—";
   document.getElementById("vm-spec-os").textContent = capitalize(vm.os) || "—";
-
-  loadVmCredentials(vm.id);
 
   // Nueva sesión de consola: invalida cualquier reconexión pendiente de un
   // panel anterior y arranca de cero.
@@ -860,8 +768,88 @@ function closeVmPanel() {
   currentVmId = null;
   currentProxmoxVmid = null;
   currentProxmoxNode = null;
-  resetVmCredentialsUI();
+  vmCredentialsLoaded = null;
 }
+
+/* ============ CREDENCIALES DE LA VM (usuario / contraseña) ============ */
+// Se cargan bajo demanda al pulsar el icono del ojo, en vez de al abrir el
+// panel: así evitamos llamar a la edge function (y descifrar) para VMs que
+// el usuario nunca llega a mirar. Se cachean mientras el panel sigue abierto
+// para la misma VM, para no volver a pedirlas si el usuario oculta/muestra
+// varias veces.
+let vmCredentialsLoaded = null; // { username, password } | null
+
+function setCredToggleIcon(shown) {
+  const btn = document.getElementById("vm-cred-toggle-btn");
+  if (shown) {
+    btn.title = "Ocultar contraseña";
+    btn.setAttribute("aria-label", "Ocultar contraseña");
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a20.6 20.6 0 015.06-6.06M9.9 4.24A10.94 10.94 0 0112 4c7 0 11 8 11 8a20.6 20.6 0 01-3.35 4.7"/><path d="M14.12 14.12a3 3 0 11-4.24-4.24"/><path d="M1 1l22 22"/></svg>`;
+  } else {
+    btn.title = "Mostrar contraseña";
+    btn.setAttribute("aria-label", "Mostrar contraseña");
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  }
+}
+
+document.getElementById("vm-cred-toggle-btn").addEventListener("click", async () => {
+  const feedback = document.getElementById("vm-cred-feedback");
+  const passwordEl = document.getElementById("vm-cred-password");
+  const usernameEl = document.getElementById("vm-cred-username");
+
+  // Ya cargadas: solo alternamos mostrar/ocultar, sin pedirlas de nuevo.
+  if (vmCredentialsLoaded) {
+    const isShown = passwordEl.textContent !== "••••••••";
+    passwordEl.textContent = isShown ? "••••••••" : vmCredentialsLoaded.password;
+    setCredToggleIcon(!isShown);
+    return;
+  }
+
+  if (!currentVmId) return;
+
+  const btn = document.getElementById("vm-cred-toggle-btn");
+  btn.disabled = true;
+  feedback.textContent = "Obteniendo credenciales…";
+
+  try {
+    const { data, error } = await supabase.functions.invoke("vm-credentials", {
+      body: { vm_id: currentVmId },
+    });
+
+    if (error || !data || data.error) {
+      feedback.textContent = "No se pudieron obtener las credenciales.";
+      return;
+    }
+
+    vmCredentialsLoaded = { username: data.username, password: data.password };
+    usernameEl.textContent = data.username || "—";
+    passwordEl.textContent = data.password || "—";
+    setCredToggleIcon(true);
+    feedback.textContent = "";
+
+    document.getElementById("vm-cred-copy-user-btn").style.display = data.username ? "inline-flex" : "none";
+    document.getElementById("vm-cred-copy-pass-btn").style.display = data.password ? "inline-flex" : "none";
+  } catch (err) {
+    feedback.textContent = "No se pudieron obtener las credenciales.";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+async function copyCredValue(value, btn) {
+  if (!value) return;
+  await navigator.clipboard.writeText(value);
+  const original = btn.innerHTML;
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>`;
+  setTimeout(() => { btn.innerHTML = original; }, 1200);
+}
+
+document.getElementById("vm-cred-copy-user-btn").addEventListener("click", (e) => {
+  copyCredValue(vmCredentialsLoaded?.username, e.currentTarget);
+});
+document.getElementById("vm-cred-copy-pass-btn").addEventListener("click", (e) => {
+  copyCredValue(vmCredentialsLoaded?.password, e.currentTarget);
+});
 
 document.getElementById("vm-panel-close").addEventListener("click", closeVmPanel);
 document.getElementById("vm-panel-overlay").addEventListener("click", (e) => {
