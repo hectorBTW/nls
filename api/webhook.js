@@ -36,7 +36,7 @@ function buffer(req) {
 }
 
 export default async function handler(req, res) {
-  console.log("🔥 WEBHOOK HIT");
+  console.log("Webhook hit");
 
   let event;
 
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.error("❌ FIRMA INVÁLIDA:", err.message);
+    console.error("Firma inválida:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -71,7 +71,7 @@ export default async function handler(req, res) {
       const stripe_subscription_id = session.subscription || null;
       const stripe_customer_id = session.customer || null;
 
-      console.log("💰 PAYMENT OK");
+      console.log("Payment OK");
       console.log("PLAN:", plan);
       console.log("OS:", os);
       console.log("USER_ID:", user_id);
@@ -83,7 +83,7 @@ export default async function handler(req, res) {
         await supabaseAdmin.auth.admin.getUserById(user_id);
 
       if (userError) {
-        console.error("❌ ERROR BUSCANDO USUARIO:", userError);
+        console.error("Error buscando usuario:", userError);
       } else {
         userEmail = userData?.user?.email ?? null;
       }
@@ -98,7 +98,7 @@ export default async function handler(req, res) {
           os,
           stripe_subscription_id,
           stripe_customer_id,
-          status: "provisioning", // ✅ ¡Corregido para saltar el error 23514!
+          status: "provisioning",
           status_message: "Esperando creación en Proxmox",
         })
         .select()
@@ -107,9 +107,9 @@ export default async function handler(req, res) {
       if (insertError) {
         // No devolvemos error a Stripe por esto, si no, Stripe reintentará
         // el webhook entero. Solo lo logueamos para revisarlo a mano.
-        console.error("❌ ERROR GUARDANDO VM:", insertError);
+        console.error("Error guardando VM:", insertError);
       } else {
-        console.log("✅ VM GUARDADA EN SUPABASE:", vm.id);
+        console.log("VM guardada en Supabase:", vm.id);
 
         // 2.5 Meter el pedido en la cola para que el worker (en el LXC
         //     de Proxmox) lo recoja y cree la VM de verdad.
@@ -118,9 +118,9 @@ export default async function handler(req, res) {
             QUEUE_KEY,
             JSON.stringify({ vm_id: vm.id, plan, os, user_id })
           );
-          console.log("📦 MENSAJE ENCOLADO EN REDIS:", vm.id);
+          console.log("Mensaje encolado en Redis:", vm.id);
         } catch (queueError) {
-          console.error("❌ ERROR ENCOLANDO EN REDIS:", queueError);
+          console.error("Error encolando en Redis:", queueError);
         }
 
         // 3. Mandar el email de aviso solo si se creó la VM en la BD
@@ -146,16 +146,16 @@ VM ID: ${vm?.id ?? "N/A"}
               text: message,
             }),
           });
-          console.log("📧 EMAIL SENT. RESEND STATUS:", response.status);
+          console.log("Email sent. RESEND STATUS:", response.status);
         } catch (emailError) {
-          console.error("❌ ERROR ENVIANDO EMAIL:", emailError);
+          console.error("Error enviando email:", emailError);
         }
       }
     }
 
     return res.status(200).json({ received: true });
   } catch (err) {
-    console.error("❌ WEBHOOK ERROR:", err);
+    console.error("Webhook error:", err);
     return res.status(500).send(err.message);
   }
 }
