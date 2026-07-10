@@ -135,7 +135,7 @@ async function handleSubscriptionDeleted(subscription) {
 
   const { data: vms, error: findError } = await supabaseAdmin
     .from("vms")
-    .select("id, proxmox_node, proxmox_vmid, status")
+    .select("id, proxmox_node, proxmox_vmid, subscription_status")
     .eq("stripe_subscription_id", stripe_subscription_id);
 
   if (findError) {
@@ -152,8 +152,8 @@ async function handleSubscriptionDeleted(subscription) {
   }
 
   for (const vm of vms) {
-    if (vm.status === "cancelling" || vm.status === "cancelled") {
-      console.log(`vm_id=${vm.id} ya estaba cancelada/en proceso, se ignora`);
+    if (vm.subscription_status === "cancelled") {
+      console.log(`vm_id=${vm.id} ya tenía subscription_status=cancelled, se ignora`);
       continue;
     }
 
@@ -161,10 +161,13 @@ async function handleSubscriptionDeleted(subscription) {
     const deletionDate = new Date(now);
     deletionDate.setDate(deletionDate.getDate() + GRACE_PERIOD_DAYS);
 
+    // subscription_status refleja lo que ya es un hecho consumado en Stripe.
+    // status (running/stopped/etc.) es independiente y lo actualizará el
+    // worker cuando de verdad apague la VM en Proxmox.
     const { error: updateError } = await supabaseAdmin
       .from("vms")
       .update({
-        status: "cancelling",
+        subscription_status: "cancelled",
         status_message: "Suscripción cancelada, apagando VM",
         cancelled_at: now.toISOString(),
         pending_deletion: true,
