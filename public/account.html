@@ -42,6 +42,20 @@
       color: var(--accent);
       font-weight: 600;
     }
+    .status-badge.status-cancelled {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .vm-console-cancelled {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-align: center;
+      padding: 24px;
+      color: var(--muted);
+    }
   </style>
 </head>
 <body>
@@ -458,10 +472,23 @@ const STATUS_MAP = {
   restarting:   { label: "Reiniciando", class: "status-provisioning" },
   error:        { label: "Error",       class: "status-error" },
   failed:       { label: "Error",       class: "status-error" },
+  cancelled:    { label: "Cancelada",   class: "status-cancelled" },
 };
 
 function getStatusInfo(status) {
   return STATUS_MAP[status] || { label: status, class: "status-stopped" };
+}
+
+// Estado a mostrar/usar en toda la UI: si la suscripción está cancelada,
+// eso manda por encima de lo que diga el status "físico" de la VM
+// (running/stopped/etc.), porque de cara al cliente y a los controles
+// del panel lo que importa es que el servicio ya no está activo.
+function isVmCancelled(vm) {
+  return vm.subscription_status === "cancelled";
+}
+
+function getEffectiveStatus(vm) {
+  return isVmCancelled(vm) ? "cancelled" : vm.status;
 }
 
 function capitalize(str) {
@@ -492,6 +519,10 @@ const PLAN_SPECS = {
 async function refreshVmsStatusesFromProxmox(vms) {
   return Promise.all(
     vms.map(async (vm) => {
+      // Si la suscripción está cancelada no tiene sentido preguntar a
+      // Proxmox: el estado que importa mostrar es "Cancelada", no el físico
+      // de la VM (que además se irá apagando/borrando por su cuenta).
+      if (isVmCancelled(vm)) return vm;
       if (!vm.proxmox_vmid || !vm.proxmox_node) return vm; // aún aprovisionando, nada que consultar
 
       try {
@@ -551,7 +582,7 @@ async function loadVms(userId, { showLoadingState = true } = {}) {
 
   let { data: vms, error } = await supabase
     .from("vms")
-    .select("id, proxmox_vmid, proxmox_node, plan, os, status, status_message, created_at")
+    .select("id, proxmox_vmid, proxmox_node, plan, os, status, status_message, subscription_status, created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
 
@@ -585,7 +616,7 @@ async function loadVms(userId, { showLoadingState = true } = {}) {
     counters[key] = (counters[key] || 0) + 1;
     const displayName = `${capitalize(vm.plan)}-${vm.os}-${counters[key]}`;
 
-    const statusInfo = getStatusInfo(vm.status);
+    const statusInfo = getStatusInfo(getEffectiveStatus(vm));
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -639,6 +670,7 @@ let currentProxmoxVmid = null; // vmid numérico de Proxmox
 let currentProxmoxNode = null; // node1 o node2
 let currentRfb = null;         // instancia activa de noVNC RFB
 let consoleConnected = false;  // true mientras la consola noVNC está realmente conectada
+let currentVmCancelled = false; // true si la VM del panel abierto tiene subscription_status=cancelled
 
 // Control de reconexión automática de la consola.
 const RECONNECT_SECONDS = 30;
@@ -691,6 +723,7 @@ function openVmPanel(vm, displayName) {
   currentVmId = vm.id;
   currentProxmoxVmid = vm.proxmox_vmid;
   currentProxmoxNode = vm.proxmox_node;
+  currentVmCancelled = isVmCancelled(vm);
 
   document.getElementById("vm-panel-title").textContent = vm.proxmox_vmid
     ? `${displayName} (ID ${vm.proxmox_vmid})`
@@ -714,6 +747,33 @@ function openVmPanel(vm, displayName) {
   document.getElementById("vm-cred-copy-pass-btn").style.display = "none";
   setCredToggleIcon(false);
 
+  // Nueva sesión de consola: invalida cualquier reconexión pendiente de un
+  // panel anterior y arranca de cero.
+  consoleSessionId++;
+  clearReconnectCountdown();
+
+  // Servidor cancelado: cortamos aquí. No hay consola, no hay botones de
+  // encendido/apagado/reinicio, y no preguntamos nada a Proxmox (la VM ya
+  // se está apagando/borrando por el flujo de cancelación de la suscripción).
+  if (currentVmCancelled) {
+    const statusInfo = getStatusInfo("cancelled");
+    const statusEl = document.getElementById("vm-panel-status");
+    statusEl.textContent = statusInfo.label;
+    statusEl.className = `status-badge ${statusInfo.class}`;
+
+    const specs = PLAN_SPECS[vm.plan] || {};
+    document.getElementById("vm-spec-plan").textContent = capitalize(vm.plan);
+    document.getElementById("vm-spec-cpu").textContent = specs.cpu || "—";
+    document.getElementById("vm-spec-ram").textContent = specs.ram || "—";
+    document.getElementById("vm-spec-disk").textContent = specs.disk || "—";
+    document.getElementById("vm-spec-os").textContent = capitalize(vm.os) || "—";
+
+    setConsoleCancelledMessage();
+    disableAllPowerButtons();
+    stopStatusPolling();
+    return;
+  }
+
   // Estado actual (ya lo tenemos en memoria, sin llamada extra)
   const statusInfo = getStatusInfo(vm.status);
   const statusEl = document.getElementById("vm-panel-status");
@@ -728,10 +788,6 @@ function openVmPanel(vm, displayName) {
   document.getElementById("vm-spec-disk").textContent = specs.disk || "—";
   document.getElementById("vm-spec-os").textContent = capitalize(vm.os) || "—";
 
-  // Nueva sesión de consola: invalida cualquier reconexión pendiente de un
-  // panel anterior y arranca de cero.
-  consoleSessionId++;
-  clearReconnectCountdown();
   setConsoleLoadingMessage("Conectando con la consola...");
   connectConsole(currentProxmoxVmid, currentProxmoxNode, consoleSessionId);
 
@@ -743,6 +799,28 @@ function openVmPanel(vm, displayName) {
   lastKnownVmStatus = vm.status;
   refreshVmStatus(currentProxmoxVmid, currentProxmoxNode, consoleSessionId);
   startStatusPolling(currentProxmoxVmid, currentProxmoxNode, consoleSessionId);
+}
+
+// Deja los tres botones de encendido/apagado/reinicio deshabilitados del
+// todo (a diferencia de setPowerButtonEnabled, que atenúa según el estado
+// físico de la VM, aquí ninguno tiene sentido: el servidor está cancelado).
+function disableAllPowerButtons() {
+  document.querySelectorAll(".vm-power-btn").forEach(btn => {
+    setPowerButtonEnabled(btn, false);
+  });
+}
+
+// Mensaje fijo en el hueco de la consola cuando el servidor está cancelado:
+// nunca se intenta pedir ticket ni abrir el WebSocket hacia el relay/Proxmox.
+function setConsoleCancelledMessage() {
+  const loadingEl = document.getElementById("vm-console-loading");
+  document.getElementById("vm-console-canvas").style.display = "none";
+  loadingEl.style.display = "flex";
+  loadingEl.className = "vm-console-loading vm-console-cancelled";
+  loadingEl.innerHTML = `
+    <strong>Este servidor ha sido cancelado.</strong>
+    <span>El acceso a la consola ya no está disponible. Los datos se eliminarán automáticamente al finalizar el periodo de gracia.</span>
+  `;
 }
 
 function closeVmPanel() {
@@ -768,7 +846,14 @@ function closeVmPanel() {
   currentVmId = null;
   currentProxmoxVmid = null;
   currentProxmoxNode = null;
+  currentVmCancelled = false;
   vmCredentialsLoaded = null;
+
+  // Restauramos el contenedor de la consola a su estado normal por si la
+  // próxima VM que se abra no está cancelada (setConsoleCancelledMessage
+  // le cambia el className).
+  const loadingEl = document.getElementById("vm-console-loading");
+  loadingEl.className = "vm-console-loading";
 }
 
 /* ============ CREDENCIALES DE LA VM (usuario / contraseña) ============ */
@@ -876,6 +961,14 @@ function setPowerButtonEnabled(btn, enabled) {
 }
 
 function applyPowerButtonsForStatus(status) {
+  // Si el panel abierto corresponde a una VM cancelada, esto nunca debería
+  // llamarse (openVmPanel corta antes), pero por si acaso alguna llamada
+  // asíncrona pendiente llega tarde, no reactivamos nada.
+  if (currentVmCancelled) {
+    disableAllPowerButtons();
+    return;
+  }
+
   const startBtn = document.querySelector(".vm-btn-start");
   const rebootBtn = document.querySelector(".vm-btn-restart");
   const stopBtn = document.querySelector(".vm-btn-stop");
@@ -902,6 +995,8 @@ function applyPowerButtonsForStatus(status) {
 // cerró el panel o cambió de VM mientras esperábamos la respuesta, se
 // ignora el resultado (comprobación de sessionId).
 async function refreshVmStatus(vmid, node, sessionId) {
+  if (currentVmCancelled) return null; // nunca se llama para VMs canceladas, pero por si acaso
+
   try {
     const { data, error } = await supabase.functions.invoke("swift-api", {
       body: { vmid, node, action: "status" },
@@ -941,6 +1036,7 @@ function clearReconnectCountdown() {
 // mientras hay un intento de conexión en curso).
 function setConsoleLoadingMessage(text) {
   const loadingEl = document.getElementById("vm-console-loading");
+  loadingEl.className = "vm-console-loading";
   loadingEl.style.display = "flex";
   loadingEl.textContent = text;
   document.getElementById("vm-console-canvas").style.display = "none";
@@ -949,6 +1045,8 @@ function setConsoleLoadingMessage(text) {
 // Pinta el estado "desconectada" con contador de reintento automático y
 // botón para reintentar ahora mismo.
 function setConsoleDisconnectedMessage(baseText, proxmoxVmid, node, sessionId) {
+  if (currentVmCancelled) return; // nunca reconectar consola para VMs canceladas
+
   const loadingEl = document.getElementById("vm-console-loading");
   document.getElementById("vm-console-canvas").style.display = "none";
   loadingEl.style.display = "flex";
@@ -964,7 +1062,7 @@ function setConsoleDisconnectedMessage(baseText, proxmoxVmid, node, sessionId) {
   `;
 
   document.getElementById("vm-console-retry-btn").addEventListener("click", () => {
-    if (sessionId !== consoleSessionId) return;
+    if (sessionId !== consoleSessionId || currentVmCancelled) return;
     clearReconnectCountdown();
     setConsoleLoadingMessage("Conectando con la consola...");
     connectConsole(proxmoxVmid, node, sessionId);
@@ -976,7 +1074,7 @@ function setConsoleDisconnectedMessage(baseText, proxmoxVmid, node, sessionId) {
   countdownEl.textContent = `Reintentando automáticamente en ${reconnectSecondsLeft}s...`;
 
   reconnectCountdownTimer = setInterval(() => {
-    if (sessionId !== consoleSessionId) {
+    if (sessionId !== consoleSessionId || currentVmCancelled) {
       clearReconnectCountdown();
       return;
     }
@@ -1133,6 +1231,10 @@ function attemptConsoleConnectOnce(proxmoxVmid, node, sessionId) {
 }
 
 async function connectConsole(proxmoxVmid, node, sessionId) {
+  // Doble seguro: si por lo que sea se llama a esto para una VM cancelada
+  // (no debería pasar, openVmPanel corta antes), no hacemos nada.
+  if (currentVmCancelled) return;
+
   const canvasEl = document.getElementById("vm-console-canvas");
 
   // Si mientras pedíamos el ticket el usuario cerró el panel o abrió otra
@@ -1243,6 +1345,10 @@ function setAllPowerButtonsDisabled(disabled) {
 
 document.querySelectorAll(".vm-power-btn").forEach(btn => {
   btn.addEventListener("click", async () => {
+    // Nunca ejecutar acciones de encendido/apagado/reinicio sobre un
+    // servidor cancelado, aunque de algún modo el botón no estuviera
+    // deshabilitado (defensa extra, además de disableAllPowerButtons).
+    if (currentVmCancelled) return;
     if (!currentProxmoxVmid || btn.disabled) return;
     const action = btn.dataset.action;
     const feedback = document.getElementById("vm-action-feedback");
